@@ -3,7 +3,7 @@
 import { useFormState, useFormStatus } from "react-dom";
 
 //internal dependencies
-import { FormContainer, FormItem, LoginButtonContainer, FormButton } from "../styled";
+import { FormContainer, FormItem, FormButtonContainer, FormButton } from "../styled";
 import { LoginFormStateProps } from "@/services/ServerActions/Authentication";
 import { createUserAccount } from "@/services/ServerActions/Authentication";
 
@@ -32,11 +32,11 @@ function SignUpFormContent({formState}: SignUpFormContentProps) {
                 <input type="password" id="SignUpPassword" name="password"/>
             </FormItem>
 
-            <LoginButtonContainer>
+            <FormButtonContainer>
                 <FormButton type="submit" disabled={pending}>
                     Criar
                 </FormButton>
-            </LoginButtonContainer>
+            </FormButtonContainer>
         </>
     )
 }

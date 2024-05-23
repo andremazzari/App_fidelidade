@@ -8,4 +8,17 @@ export const RegisterPageContainer = styled.div`
     display: flex;
     justify-content: center;
     align-items: center;
+    padding-top: 60px;
+`;
+
+export const FormContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid black;
+    border-radius: 10px;
+    max-width: 300px;
+    width: 250px;
+    height: 150px;
 `;

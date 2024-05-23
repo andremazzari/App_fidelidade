@@ -8,7 +8,7 @@ class LoginRequests {
         
         const options: sendProps = {
             method: 'POST',
-            url: `${process.env.BACKEND_SERVER_ADDRESS as string}/user/login`,
+            url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/user/login`,
             body: {email, password},
             contentType: 'form-urlencoded',
             cache: 'no-store'
@@ -32,7 +32,7 @@ class LoginRequests {
 
         const options: sendProps = {
             method: 'POST',
-            url: `${process.env.BACKEND_SERVER_ADDRESS as string}/user`,
+            url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/user`,
             body: body,
             contentType: 'form-urlencoded',
             cache: 'no-store'

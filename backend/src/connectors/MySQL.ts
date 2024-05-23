@@ -100,6 +100,27 @@ class MySQLClient {
             throw error;
         }
     }
+
+    async callProcedure(sqlQuery: string, parameters?: Array<string | number | null>) {
+        try {
+            if (this.connection == null) {
+                throw new Error('Error connecting to mysql server');
+            }
+            
+            if (parameters) {
+                const [result, fields] = await this.connection.execute(sqlQuery, parameters);
+
+                return result;
+            } else {
+                const [result, fields] = await this.connection.execute(sqlQuery);
+                
+                return result;
+            }
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
 }
 
 export const mysqlClient = new MySQLClient()

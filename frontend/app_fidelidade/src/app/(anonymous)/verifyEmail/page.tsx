@@ -9,7 +9,7 @@ export default async function Page({searchParams}:{searchParams: { [key: string]
     if (typeof token === 'string' && EnccryptUtils.verifyJWT(token, process.env.JWT_PUBLIC_KEY_EMAIL_VERIFICATION as string)) {
         const options: sendProps = {
             method: 'POST',
-            url: `${process.env.BACKEND_SERVER_ADDRESS}/user/verifyEmail`,
+            url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS}/user/verifyEmail`,
             cache: 'no-store',
             body: {
                 verificationToken: token

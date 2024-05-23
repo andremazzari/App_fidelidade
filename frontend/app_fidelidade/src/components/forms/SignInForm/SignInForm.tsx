@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 
 //internal dependencies
-import { LoginButtonContainer, FormButton, FormContainer, FormItem } from "../styled"
+import { FormButtonContainer, FormButton, FormContainer, FormItem } from "../styled"
 import { Login, LoginFormStateProps } from "@/services/ServerActions/Authentication";
 
 interface SignInFormContentProps {
@@ -31,11 +31,11 @@ function SignInformContent({formState, redirectPath}: SignInFormContentProps) {
             {/*redirect parameter*/}
             <input type="hidden" name='redirectPath' value={redirectPath}/>
             
-            <LoginButtonContainer>
+            <FormButtonContainer>
                 <FormButton type="submit" disabled={pending}>
                     Entrar
                 </FormButton>
-            </LoginButtonContainer>
+            </FormButtonContainer>
         </>
     )
 }

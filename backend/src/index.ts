@@ -6,6 +6,7 @@ var cookieParser = require('cookie-parser');
 
 //internal dependencies
 import userRouter from './routes/UserRoutes';
+import fidelityRouter from './routes/FidelityRoutes';
 
 
 class Server {
@@ -13,7 +14,7 @@ class Server {
 
     _addCors() {
         const corsOptions = {
-            origin: 'https://localhost:3000', // Allow only this origin to send requests
+            origin: 'http://localhost:3000', // Allow only this origin to send requests
             credentials: true, // Allow cookies to be sent with requests
         };
 
@@ -40,7 +41,8 @@ class Server {
 
         //routes
         this.server.use(userRouter);
-        console
+        this.server.use(fidelityRouter);
+
         this.server.listen(process.env.PORT);
     }
 }

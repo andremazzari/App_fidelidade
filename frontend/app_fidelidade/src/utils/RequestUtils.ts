@@ -1,7 +1,7 @@
 //internal dependencies
 import { verifySession, getToken } from "@/services/ServerActions/Authentication";
 
-type methodOptions = 'GET' | 'POST';
+type methodOptions = 'GET' | 'POST' | 'PUT';
 type contentTypesOptions = 'json' | 'form-urlencoded';
 type cacheOptions = 'force-cache' | 'no-store';
 type revalidateOptions = number | 0 | false;
@@ -55,9 +55,27 @@ class RequestsUtils {
     }
 
     static async _post(url: string, options: fetchOptions, body: bodyType | undefined, contentType: contentTypesOptions, setAuthHeader?: boolean) {
-        options.headers = await this._preparePostHeader(options.headers, contentType, setAuthHeader);
+        options.headers = await this._preparePostOrPutHeader(options.headers, contentType, setAuthHeader);
         if (body) {
-            options.body = RequestsUtils._preparePostBody(body, contentType);
+            options.body = RequestsUtils._preparePostOrPutBody(body, contentType);
+        }
+        
+        try {
+            return await fetch(url, options)
+        } catch (error: any) {
+            if (process.env.ENV == 'DEV') {
+                console.log('Error at POST at RequestUtils:');
+                console.log(url);
+                console.log(error);
+            }
+            throw error;
+        }
+    }
+
+    static async _put(url: string, options: fetchOptions, body: bodyType | undefined, contentType: contentTypesOptions, setAuthHeader?: boolean) {
+        options.headers = await this._preparePostOrPutHeader(options.headers, contentType, setAuthHeader);
+        if (body) {
+            options.body = RequestsUtils._preparePostOrPutBody(body, contentType);
         }
         
         try {
@@ -83,7 +101,7 @@ class RequestsUtils {
         return finalHeader;
     }
 
-    static async _preparePostHeader(header: HeadersInit |undefined, contentType: contentTypesOptions, setAuthHeader?: boolean): Promise<Headers> {
+    static async _preparePostOrPutHeader(header: HeadersInit |undefined, contentType: contentTypesOptions, setAuthHeader?: boolean): Promise<Headers> {
         let finalHeader = new Headers(header);
 
         //add authorization
@@ -116,7 +134,7 @@ class RequestsUtils {
         return header;
     }
 
-    static _preparePostBody(body: bodyType, contentType: contentTypesOptions): BodyInit {
+    static _preparePostOrPutBody(body: bodyType, contentType: contentTypesOptions): BodyInit {
         let formatedBody: BodyInit;
         switch(contentType) {
             case 'form-urlencoded':
@@ -159,7 +177,7 @@ class RequestsUtils {
         if (requestOptions.credentials !== undefined) {
             options.credentials = requestOptions.credentials;
         }
-
+        
         let response: any
         switch(requestOptions.method) {
             case 'GET':
@@ -169,12 +187,25 @@ class RequestsUtils {
                 if (!requestOptions.contentType) {
                     requestOptions.contentType = RequestsUtils.DEFAULT_CONTENT_TYPE;
                 }
-
+                
                 response = await RequestsUtils._post(requestOptions.url, options, requestOptions.body, requestOptions.contentType, requestOptions.setAuthHeader);
                 break;
+            case 'PUT':
+                if (!requestOptions.contentType) {
+                    requestOptions.contentType = RequestsUtils.DEFAULT_CONTENT_TYPE;
+                }
+                
+                response = await RequestsUtils._put(requestOptions.url, options, requestOptions.body, requestOptions.contentType, requestOptions.setAuthHeader);
+                break;
         }
-
-        const data = await response.json();
+        
+        //TEMP: status code 404 is throwing error, not returning json.
+        let data: any
+        if (response.status != 204) {
+            data = await response.json();
+        } else {
+            data = {}
+        }
         
         return {status: response.status, data: data};
     }

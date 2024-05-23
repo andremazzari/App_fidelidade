@@ -3,11 +3,16 @@ import {v4 as uuidv4} from 'uuid';
 
 //internal dependencies
 import { User, UserIGAccount, FacebookLoginToken, LoginResult, IUserService, IUserRepository } from "../models/User";
+import { IFidelityRepository } from '../models/Fidelity';
 import Utils from '../utils/Utils';
 import EmailService from './EmailService';
 
 class UserService implements IUserService {
-    constructor(private userRepository: IUserRepository, private emailService: EmailService) {}
+    constructor(
+        private userRepository: IUserRepository,
+        private emailService: EmailService,
+        private fidelityRepository: IFidelityRepository
+    ) {}
 
     async getById(id_user: string): Promise<User | {}> {
         return await this.userRepository.getById(id_user);
@@ -15,6 +20,7 @@ class UserService implements IUserService {
 
     createSessionTokens(id_user: string, authenticated: boolean): LoginResult {
         //TEMP: Shoudl this function be here or in Utils ?
+        //TEMP: include the id of the user and the id of the store.
         let result: LoginResult = {
             authenticated
         }
@@ -42,6 +48,9 @@ class UserService implements IUserService {
             
             //include in the database
             const id_user = await this.userRepository.createUser(body);
+
+            //create default fidelity config
+            this.fidelityRepository.createFidelityTarget(id_user);
 
             //Create session token
             const result = this.createSessionTokens(id_user, true);

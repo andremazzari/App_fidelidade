@@ -1,0 +1,249 @@
+//internal dependencies
+import { IFidelityRepository } from "../models/Fidelity";
+import { mysqlClient } from "../connectors/MySQL";
+import { ResultSetHeader } from "mysql2";
+
+class FidelityRepository implements IFidelityRepository {
+    async registerFidelity(phone: number, userId: string): Promise<boolean> {
+        const sql = `
+        INSERT INTO ${process.env.MYSQL_DATABASE as string}.fidelity_history (id, phone, points, target)
+        VALUES (UUID_TO_BIN(?, TRUE), ?, 1, (SELECT target FROM ${process.env.MYSQL_DATABASE as string}.fidelity_config WHERE id = UUID_TO_BIN(?, TRUE)))
+        `;
+
+        const parameters = [userId, phone, userId];
+
+        try {
+            const result = await mysqlClient.insertQuery(sql, parameters);
+            //TEMP: verify if the insertion ocurred correctly
+            return true
+        } catch (error) {
+            //TEMP: or return false ?
+            throw error
+        }
+    }
+
+    async getRecords(userId: string, offset: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any> {
+        //TEMP: validate offset and pageSize againts sql injection
+        let sql = `
+        SELECT
+            phone,
+            created_at
+        FROM
+            ${process.env.MYSQL_DATABASE as string}.fidelity_history
+        WHERE
+            id = UUID_TO_BIN(?, TRUE)`;
+        const parameters: Array<string | number> = [userId];
+
+        if (phone !== undefined) {
+            sql += ' AND phone = ?'
+            parameters.push(phone);
+        }
+
+        if (initialDate !== undefined && endDate !== undefined) {
+            sql += ' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)'
+            parameters.push(initialDate);
+            parameters.push(endDate);
+        }
+
+        sql += `
+        ORDER BY
+            created_at DESC
+        LIMIT ${pageSize}
+        OFFSET ${offset}
+        `;
+        
+        try {
+            const result = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
+
+            return result;
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async getRecordsCount(userId: string, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number> {
+        let sql = `
+        SELECT
+            count(*) as count
+        FROM
+            ${process.env.MYSQL_DATABASE as string}.fidelity_history
+        WHERE
+            id = UUID_TO_BIN(?, TRUE)`;
+        const parameters: Array<string | number> = [userId];
+
+        if (phone !== undefined) {
+            sql += ' AND phone = ?'
+            parameters.push(phone);
+        }
+
+        if (initialDate !== undefined && endDate !== undefined) {
+            sql += ' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)'
+            parameters.push(initialDate);
+            parameters.push(endDate);
+        }
+        
+        try {
+            const result = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
+
+            if (result.length == 1) {
+                return result[0].count;
+            } else {
+                throw new Error('Error in counting record history.');
+            }
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async countPoints(userId: string, phone: number, initialDate?: string, endDate?: string): Promise<number> {
+        let sql = `
+        SELECT
+            sum(points) as points
+        FROM
+            ${process.env.MYSQL_DATABASE as string}.fidelity_history
+        WHERE
+            id = UUID_TO_BIN(?, TRUE)
+            AND phone = ?
+            AND redeemed_at IS NULL`;
+        const parameters: Array<string | number> = [userId, phone];
+
+        if (initialDate !== undefined && endDate !== undefined) {
+            sql += ' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)'
+            parameters.push(initialDate);
+            parameters.push(endDate);
+        }
+        
+        try {
+            const result = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
+            
+            if (result.length == 1) {
+                return result[0].points == null ? 0 : parseInt(result[0].points);
+                
+            }
+
+            return 0
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async getOlderTarget(userId: string, phone: number): Promise<number | null> {
+        const sql = `
+        SELECT
+            target
+        FROM
+            ${process.env.MYSQL_DATABASE as string}.fidelity_history
+        WHERE
+            id = UUID_TO_BIN(?, TRUE)
+            AND phone = ?
+            AND redeemed_at IS NULL
+        ORDER BY
+            created_at ASC
+        LIMIT 1
+        `;
+
+        const parameters = [userId, phone];
+
+        try {
+            const result = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
+            
+            if (result.length == 0) {
+                return null
+            } else {
+                return parseInt(result[0].target);
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async createFidelityTarget(userId: string): Promise<void> {
+        const defaultTarget = 10; //TEMP: should this default be in the table definition ?
+        const sql = `
+            INSERT INTO ${process.env.MYSQL_DATABASE as string}.fidelity_config (id, target)
+            VALUES (UUID_TO_BIN(?, TRUE), ?)
+        `;
+
+        const parameters = [userId, defaultTarget];
+
+        try {
+            await mysqlClient.insertQuery(sql, parameters)
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getFidelityConfig(userId: string): Promise<any> {
+        const sql = `
+        SELECT
+            target
+        FROM
+            ${process.env.MYSQL_DATABASE as string}.fidelity_config
+        WHERE
+            id = UUID_TO_BIN(?, TRUE)
+        `;
+
+        const parameters = [userId]
+
+        try {
+            const result = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
+
+            if (result.length == 0) {
+                //TEMP: review this error
+                throw new Error('Not found')
+            } else if (result.length == 1) {
+                return result[0];
+            } else {
+                throw new Error('Error in reading fidelity config.');
+            }
+        } catch (error) {
+            throw error
+        }        
+    }
+
+    async updateFidelityTarget(userId: string, newTarget: number): Promise<boolean> {
+        //TEMP: use the id of the store
+        const sql = `
+        UPDATE ${process.env.MYSQL_DATABASE as string}.fidelity_config
+        SET target = ?
+        WHERE id = UUID_TO_BIN(?, TRUE) 
+        `;
+
+        const parameters = [newTarget, userId];
+        try {
+            const result = await mysqlClient.updateQuery(sql, parameters) as ResultSetHeader;
+            if (result.affectedRows == 1) {
+                return true;
+            } else if (result.affectedRows == 0) {
+                throw new Error('Target update failed');
+            } else {
+                throw new Error('Target update: more than one user updated.');
+            }
+        } catch (error) {
+            throw error
+        }
+    }
+    
+    async redeemFidelity(userId: string, phone: number, target: number): Promise<void> {
+        //TEMP: For now, this function only works if each record values 1 point.
+        const sql = `CALL RedeemPoints(?,?,?)`;
+
+        const parameters = [userId, phone, target];
+
+        try {
+            const result = await mysqlClient.callProcedure(sql, parameters) as ResultSetHeader;
+            console.log(result);
+            /*
+            if (result.affectedRows != target) {
+                //TEMP: how should I treat this error ?
+                throw new Error('Wrong number of updated rows!');
+            }
+            */
+        } catch (error) {
+
+            throw error;
+        }
+    }
+}
+
+export default FidelityRepository;

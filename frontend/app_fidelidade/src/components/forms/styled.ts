@@ -16,7 +16,7 @@ export const FormItem = styled.div<LoginformItemProps>`
     margin-bottom: ${props => props.marginbottom};
 `;
 
-export const LoginButtonContainer = styled.div`
+export const FormButtonContainer = styled.div`
     display: flex;
     justify-content: center;
     align-items: center;
