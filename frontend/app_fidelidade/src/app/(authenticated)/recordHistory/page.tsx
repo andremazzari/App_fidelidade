@@ -1,6 +1,5 @@
 //internal dependencies
 import { PageContainer } from "./styled";
-import RequestsUtils, { sendProps } from "@/utils/RequestUtils";
 import RecordHistory from "@/containers/RecordHistory/RecordHistory";
 import RecordHistoryRequests from "@/services/RecordHistoryRequests";
 

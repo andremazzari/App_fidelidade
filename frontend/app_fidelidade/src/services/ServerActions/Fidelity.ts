@@ -1,4 +1,7 @@
 'use server'
+//external dependencies
+import { revalidateTag } from "next/cache"
+
 //internal dependencies
 import RequestsUtils, { sendProps } from "@/utils/RequestUtils"
 
@@ -13,7 +16,7 @@ export async function RegisterFidelity(prevState: FidelityFormStateProps, formDa
         
         const options: sendProps = {
             method: 'POST',
-            url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/registerFidelity`,
+            url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/fidelity`,
             body: {phone},
             contentType: 'form-urlencoded',
             cache: 'no-store',
@@ -26,6 +29,8 @@ export async function RegisterFidelity(prevState: FidelityFormStateProps, formDa
             //TEMP: treat types of errors
             return {success: false, message: 'Erro ao cadastrar fidelidade.'}
         } else {
+            //Revalidate data in history table
+            revalidateTag('registerPageRecordHistory');
             return {success: true, message: 'Fidelidade registrada com sucesso.'}
         }
     } catch (error) {
@@ -50,7 +55,7 @@ export async function updateFidelityConfig(prevState: UpdateFidelityConfigFormPr
     if (!validationResult.error) {
         const options: sendProps = {
             method: 'PUT',
-            url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/updateTarget`,
+            url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/fidelity/config`,
             body: {target},
             contentType: 'form-urlencoded',
             cache: 'no-store',

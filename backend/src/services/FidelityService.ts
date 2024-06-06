@@ -20,13 +20,13 @@ class FidelityService implements IFidelityService {
         }
     }
 
-    async getRecords(userId: string, pageNumber: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any> {
+    async getRecords(userId: string, pageNumber: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<any> {
         //TEMP: review errors and return types
         try {
             const offset = (pageNumber - 1) * pageSize
-            const records = await this.fidelityRepository.getRecords(userId, offset, pageSize, phone, initialDate, endDate);
+            const records = await this.fidelityRepository.getRecords(userId, offset, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled);
 
-            const pages = await this.getRecordsCountPages(userId, pageSize, phone, initialDate, endDate);
+            const pages = await this.getRecordsCountPages(userId, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled);
 
             return {pages, records}
         } catch (error) {
@@ -34,10 +34,21 @@ class FidelityService implements IFidelityService {
         }
     }
 
-    async getRecordsCountPages(userId: string, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number> {
+    async deleteFidelityRecord(userId: string, phone: number, timestamp: string): Promise<string> {
+        try {
+            const result = await this.fidelityRepository.deleteFidelityRecord(userId, phone, timestamp);
+
+            //Should the client be notified via whatsapp message ?
+            return result
+        } catch(error) {
+            throw error
+        }
+    }
+
+    async getRecordsCountPages(userId: string, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<number> {
         //TEMP: review errors and return types
         try {
-            const totalCount = await this.fidelityRepository.getRecordsCount(userId, phone, initialDate, endDate);
+            const totalCount = await this.fidelityRepository.getRecordsCount(userId, phone, initialDate, endDate, excludeRedeemed, includeCanceled);
 
             const pages = Math.ceil(totalCount / pageSize); 
 
@@ -105,6 +116,32 @@ class FidelityService implements IFidelityService {
             }
         } catch (error) {
             throw error
+        }
+    }
+
+    async getRedeemRecords(userId: string, pageNumber: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any> {
+        try {
+            const offset = (pageNumber - 1) * pageSize
+            const records = await this.fidelityRepository.getRedeemRecords(userId, offset, pageSize, phone, initialDate, endDate);
+
+            const pages = await this.getRedeemRecordsCountPages(userId, pageSize, phone, initialDate, endDate);
+
+            return {pages, records}
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getRedeemRecordsCountPages(userId: string, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number> {
+        //TEMP: review errors and return types
+        try {
+            const totalCount = await this.fidelityRepository.getRedeemRecordsCount(userId, phone, initialDate, endDate);
+
+            const pages = Math.ceil(totalCount / pageSize); 
+
+            return pages
+        } catch (error) {
+            throw error;
         }
     }
 }

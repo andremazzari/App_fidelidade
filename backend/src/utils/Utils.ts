@@ -50,6 +50,22 @@ class Utils {
         //TEMP: treat error
         return jwt.decode(token, {json: true, complete: complete}) as Record<string, unknown>;
     }
+
+    static StringToBoolean(param: string | undefined): boolean | undefined {
+        if (param === undefined) {
+            return undefined;
+        }
+
+        if (param === 'true' || param === 'True' || param === '1') {
+            return true;
+        }
+
+        if (param === 'false' || param === 'False' || param === '0') {
+            return false;
+        }
+
+        return undefined
+    }
 }
 
 export default Utils;

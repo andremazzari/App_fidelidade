@@ -46,6 +46,7 @@ BEGIN
                     id = UUID_TO_BIN(p_userId, TRUE)
                     AND phone = p_phone
                     AND redeemed_at IS NULL
+                    AND canceled_at IS NULL
                 ORDER BY created_at ASC
                 LIMIT p_target
             ) AS limited_rows
@@ -57,6 +58,7 @@ BEGIN
             id = UUID_TO_BIN(p_userId, TRUE)
             AND phone = p_phone
             AND created_at BETWEEN (SELECT min_timestamp FROM timestamp_limits) AND (SELECT max_timestamp FROM timestamp_limits)
+            AND canceled_at IS NULL
         ;
 
     -- Commit the transaction

@@ -14,7 +14,7 @@ class Server {
 
     _addCors() {
         const corsOptions = {
-            origin: 'http://localhost:3000', // Allow only this origin to send requests
+            origin: 'https://localhost:3000', // Allow only this origin to send requests
             credentials: true, // Allow cookies to be sent with requests
         };
 

@@ -1,7 +1,7 @@
 //internal dependencies
 import { verifySession, getToken } from "@/services/ServerActions/Authentication";
 
-type methodOptions = 'GET' | 'POST' | 'PUT';
+type methodOptions = 'GET' | 'POST' | 'PUT' | 'DELETE';
 type contentTypesOptions = 'json' | 'form-urlencoded';
 type cacheOptions = 'force-cache' | 'no-store';
 type revalidateOptions = number | 0 | false;
@@ -42,7 +42,7 @@ class RequestsUtils {
 
     //Request methods
     static async _get(url: string, options: fetchOptions, setAuthHeader?: boolean) {
-        options.headers = await this._prepareGetHeader(options.headers, setAuthHeader);
+        options.headers = await this._prepareHeader(options.headers, undefined, setAuthHeader);
         try {
             return await fetch(url, options);
         } catch (error: any) {
@@ -55,9 +55,9 @@ class RequestsUtils {
     }
 
     static async _post(url: string, options: fetchOptions, body: bodyType | undefined, contentType: contentTypesOptions, setAuthHeader?: boolean) {
-        options.headers = await this._preparePostOrPutHeader(options.headers, contentType, setAuthHeader);
+        options.headers = await this._prepareHeader(options.headers, contentType, setAuthHeader);
         if (body) {
-            options.body = RequestsUtils._preparePostOrPutBody(body, contentType);
+            options.body = RequestsUtils._prepareBody(body, contentType);
         }
         
         try {
@@ -73,9 +73,9 @@ class RequestsUtils {
     }
 
     static async _put(url: string, options: fetchOptions, body: bodyType | undefined, contentType: contentTypesOptions, setAuthHeader?: boolean) {
-        options.headers = await this._preparePostOrPutHeader(options.headers, contentType, setAuthHeader);
+        options.headers = await this._prepareHeader(options.headers, contentType, setAuthHeader);
         if (body) {
-            options.body = RequestsUtils._preparePostOrPutBody(body, contentType);
+            options.body = RequestsUtils._prepareBody(body, contentType);
         }
         
         try {
@@ -90,18 +90,25 @@ class RequestsUtils {
         }
     }
 
-    static async _prepareGetHeader(header: HeadersInit |undefined, setAuthHeader?: boolean): Promise<Headers> {
-        let finalHeader = new Headers(header);
-
-        //add authorization
-        if (setAuthHeader) {
-            finalHeader = await RequestsUtils._setAuthorizationHeader(finalHeader);
+    static async _delete(url: string, options: fetchOptions, body: bodyType | undefined, contentType: contentTypesOptions, setAuthHeader?: boolean) {
+        options.headers = await this._prepareHeader(options.headers, contentType, setAuthHeader);
+        if (body) {
+            options.body = RequestsUtils._prepareBody(body, contentType);
         }
-
-        return finalHeader;
+        
+        try {
+            return await fetch(url, options)
+        } catch (error: any) {
+            if (process.env.ENV == 'DEV') {
+                console.log('Error at DELETE at RequestUtils:');
+                console.log(url);
+                console.log(error);
+            }
+            throw error;
+        }
     }
 
-    static async _preparePostOrPutHeader(header: HeadersInit |undefined, contentType: contentTypesOptions, setAuthHeader?: boolean): Promise<Headers> {
+    static async _prepareHeader(header: HeadersInit |undefined, contentType: contentTypesOptions | undefined, setAuthHeader?: boolean): Promise<Headers> {
         let finalHeader = new Headers(header);
 
         //add authorization
@@ -134,7 +141,7 @@ class RequestsUtils {
         return header;
     }
 
-    static _preparePostOrPutBody(body: bodyType, contentType: contentTypesOptions): BodyInit {
+    static _prepareBody(body: bodyType, contentType: contentTypesOptions): BodyInit {
         let formatedBody: BodyInit;
         switch(contentType) {
             case 'form-urlencoded':
@@ -196,6 +203,13 @@ class RequestsUtils {
                 }
                 
                 response = await RequestsUtils._put(requestOptions.url, options, requestOptions.body, requestOptions.contentType, requestOptions.setAuthHeader);
+                break;
+            case 'DELETE':
+                if (!requestOptions.contentType) {
+                    requestOptions.contentType = RequestsUtils.DEFAULT_CONTENT_TYPE;
+                }
+                
+                response = await RequestsUtils._delete(requestOptions.url, options, requestOptions.body, requestOptions.contentType, requestOptions.setAuthHeader);
                 break;
         }
         

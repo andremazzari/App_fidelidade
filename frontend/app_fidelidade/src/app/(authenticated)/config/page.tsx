@@ -6,7 +6,7 @@ import RequestsUtils, {sendProps} from "@/utils/RequestUtils";
 export default async function Page() {
     const options: sendProps = {
         method: 'GET',
-        url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/fidelityConfig`,
+        url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/fidelity/config`,
         contentType: 'form-urlencoded',
         cache: 'no-store',
         setAuthHeader: true
@@ -20,8 +20,10 @@ export default async function Page() {
     }
 
     return (
-        <PageContainer>
-            <FidelityConfig initialTarget={response.data.target}/>
-        </PageContainer>
+        <>
+            <PageContainer>
+                <FidelityConfig initialTarget={response.data.target}/>
+            </PageContainer>
+        </>
     )
 }

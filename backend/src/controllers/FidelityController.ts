@@ -4,7 +4,8 @@ import { Request, Response } from "express";
 
 //internal dependencies
 import { IFidelityController, IFidelityService } from "../models/Fidelity";
-import { RegisterFidelitySchema, GetRecordsSchema, GetRecordsCountPagesSchema, UpdateFidelityTargetSchema, GetFidelityConfigSchema, GetFidelityInfoSchema, RedeemFidelitySchema } from "../schemas/FidelitySchema";
+import { RegisterFidelitySchema, GetRecordsSchema, GetRecordsCountPagesSchema, UpdateFidelityTargetSchema, GetFidelityConfigSchema, GetFidelityInfoSchema, RedeemFidelitySchema, GetRedeemRecordsSchema, DeleteFidelitySchema } from "../schemas/FidelitySchema";
+import Utils from "../utils/Utils";
 
 class FidelityController implements IFidelityController {
     constructor(private fidelityService: IFidelityService) {}
@@ -34,23 +35,48 @@ class FidelityController implements IFidelityController {
         const userId = req.body.userId;
         const pageNumber = req.query.pageNumber as string;
         const pageSize = req.query.pageSize as string;
-        let phone = req.query.phone as string;
-        const initialDate = req.query.initialDate as string;
-        const endDate = req.query.endDate as string;
+        let phone = req.query.phone as string | undefined;
+        const initialDate = req.query.initialDate as string | undefined;
+        const endDate = req.query.endDate as string | undefined;
+        const excludeRedeemed = Utils.StringToBoolean(req.query.excludeRedeemed as string | undefined);
+        const includeCanceled = Utils.StringToBoolean(req.query.includeCanceled as string | undefined);
 
         try {
-            await GetRecordsSchema.validate({userId, pageNumber, pageSize, phone, initialDate, endDate});
+            await GetRecordsSchema.validate({userId, pageNumber, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
         } catch (error) {
             return res.status(400).json({error});
         }
 
         try {
             const transformedPhone = phone !== undefined ? parseInt(phone) : undefined;
-            const result = await this.fidelityService.getRecords(userId, parseInt(pageNumber), parseInt(pageSize), transformedPhone, initialDate, endDate);
+            const result = await this.fidelityService.getRecords(userId, parseInt(pageNumber), parseInt(pageSize), transformedPhone, initialDate, endDate, excludeRedeemed, includeCanceled);
 
             return res.status(200).json(result)
         } catch (error) {
             //TEMP: in prod, do not send mysql errors here
+            return res.status(500).json({error})
+        }
+    }
+
+    async deleteFidelityRecord(req: Request, res: Response): Promise<Response> {
+        //TEMP: in the future, use the id of the store.
+        const userId = req.body.userId;
+        const phone = req.body.phone;
+        const timestamp = req.body.timestamp;
+
+        try {
+            await DeleteFidelitySchema.validate({userId, phone, timestamp});
+        } catch (error) {
+            return res.status(400).json({error});
+        }
+
+        try {
+            const result = await this.fidelityService.deleteFidelityRecord(userId, parseInt(phone), timestamp);
+
+            return res.status(200).json({canceled_at: result})
+        } catch (error) {
+            //TEMP: in prod, do not send mysql errors here
+            console.log(error);
             return res.status(500).json({error})
         }
     }
@@ -62,16 +88,18 @@ class FidelityController implements IFidelityController {
         let phone = req.query.phone as string;
         const initialDate = req.query.initialDate as string;
         const endDate = req.query.endDate as string;
+        const excludeRedeemed = Utils.StringToBoolean(req.query.excludeRedeemed as string | undefined);
+        const includeCanceled = Utils.StringToBoolean(req.query.includeCanceled as string | undefined);
 
         try {
-            await GetRecordsCountPagesSchema.validate({userId, pageSize, phone, initialDate, endDate});
+            await GetRecordsCountPagesSchema.validate({userId, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
         } catch (error) {
             return res.status(400).json({error});
         }
 
         try {
             const transformedPhone = phone !== undefined ? parseInt(phone) : undefined;
-            const pagesNumber = await this.fidelityService.getRecordsCountPages(userId, parseInt(pageSize), transformedPhone, initialDate, endDate);
+            const pagesNumber = await this.fidelityService.getRecordsCountPages(userId, parseInt(pageSize), transformedPhone, initialDate, endDate, excludeRedeemed, includeCanceled);
 
             return res.status(200).json({pages: pagesNumber});
         } catch (error) {
@@ -162,6 +190,33 @@ class FidelityController implements IFidelityController {
             //TEMP: in prod, do not send mysql errors here
             //TEMP: treat different kinds of errors: not enough points, not found, numbers of rows updated different from target, etc
             return res.status(500).json({error});
+        }
+    }
+
+
+    async getRedeemRecords(req: Request, res: Response): Promise<Response> {
+        //TEMP: in the future, use the id of the store.
+        const userId = req.body.userId;
+        const pageNumber = req.query.pageNumber as string;
+        const pageSize = req.query.pageSize as string;
+        let phone = req.query.phone as string;
+        const initialDate = req.query.initialDate as string;
+        const endDate = req.query.endDate as string;
+
+        try {
+            await GetRedeemRecordsSchema.validate({userId, pageNumber, pageSize, phone, initialDate, endDate});
+        } catch (error) {
+            return res.status(400).json({error});
+        }
+
+        try {
+            const transformedPhone = phone !== undefined ? parseInt(phone) : undefined;
+            const result = await this.fidelityService.getRedeemRecords(userId, parseInt(pageNumber), parseInt(pageSize), transformedPhone, initialDate, endDate);
+
+            return res.status(200).json(result)
+        } catch (error) {
+            //TEMP: in prod, do not send mysql errors here
+            return res.status(500).json({error})
         }
     }
 }

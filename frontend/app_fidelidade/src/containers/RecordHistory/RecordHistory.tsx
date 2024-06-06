@@ -1,19 +1,24 @@
 'use client'
 //external dependencies
-import { useState, useEffect, FormEvent, ChangeEvent } from "react";
+import { useState, useEffect, useRef, FormEvent, ChangeEvent } from "react";
 
 //internal dependencies
 import RecordHistoryTable, { RecordHistoryTableProps } from "../../components/tables/RecordHistoryTable/RecordHistoryTable";
 import { RecordHistoryContainer, RecordHistoryHeaderForm, PaginationForm } from "./styled";
 import RecordHistoryRequests from "@/services/RecordHistoryRequests";
 import Utils from "@/utils/Utils";
+import HistoryOptionsButton from "@/components/buttons/HistoryOptions/HistoryOptions";
+import RedeemHistoryTable from "@/components/tables/RedeemHistoryTable/RedeemHistoryTable";
 
+//TEMP: unify RecordHistoryTableProps interface to include the Redeem Props too
 interface RecordHistoryProps extends RecordHistoryTableProps {
     initialPageNumber: number
     initialTotalPages: number
 }
 
 export default function RecordHistory({initialData, initialPageNumber, initialTotalPages}: RecordHistoryProps) {
+    const [isRecordHistorySelected, setIsRecordHistorySelected] = useState(true);
+
     const [tableData, setTableData] = useState(initialData);
     const [totalPages, setTotalPages] = useState(initialTotalPages);
 
@@ -32,7 +37,12 @@ export default function RecordHistory({initialData, initialPageNumber, initialTo
     const [endDateFilter, setEndDateFilter] = useState('');
     const [datesError, setDatesError] = useState({error: false, message: ''});
 
+    const [isRedeemedFilterEnabled, setIsRedeemedFilterEnabled] = useState(false);
+    const [isCanceledFilterEnabled, setIsCanceledFilterEnable] = useState(false);
+
     const [pageNumber, setPageNumber] = useState(initialPageNumber);
+
+    const isMounted = useRef(false);
 
     //TEMP: review the page size
     const pageSize = 10;
@@ -66,7 +76,12 @@ export default function RecordHistory({initialData, initialPageNumber, initialTo
                     page = pageNumber
                 }
 
-                const response = await RecordHistoryRequests.getRecords(page, pageSize, phone, initialDate, endDate);
+                let response;
+                if (isRecordHistorySelected) {
+                    response = await RecordHistoryRequests.getRecords(page, pageSize, phone, initialDate, endDate, isRedeemedFilterEnabled, isCanceledFilterEnabled);
+                } else {
+                    response = await RecordHistoryRequests.getRedeemRecords(page, pageSize, phone, initialDate, endDate);
+                }
                 
                 if (response.status != 200) {
                     //TEMP: print error message in page
@@ -97,6 +112,33 @@ export default function RecordHistory({initialData, initialPageNumber, initialTo
             fecthData();
         }
     }, [updateDataTrigger]);
+
+    useEffect(() => {
+        async function fetchData() {
+            let response;
+            if (isRecordHistorySelected) {
+                response = await RecordHistoryRequests.getRecords(pageNumber, pageSize, currentPhone, currentInitialDate, currentEndDate, isCanceledFilterEnabled);
+            } else {
+                response = await RecordHistoryRequests.getRedeemRecords(pageNumber, pageSize, currentPhone, currentInitialDate, currentEndDate);
+            }
+            
+            if (response.status != 200) {
+                //TEMP: print error message in page
+                console.log('Erro para ler dados do historico!');
+            }
+
+            setTableData(response.data.records);
+            setTotalPages(response.data.pages);
+        }
+
+        if (isMounted.current) {
+            fetchData();
+        }
+    }, [isRecordHistorySelected]);
+
+    useEffect(() => {
+        isMounted.current = true;
+    }, []);
 
     function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -170,6 +212,7 @@ export default function RecordHistory({initialData, initialPageNumber, initialTo
 
     return (
         <RecordHistoryContainer>
+            <HistoryOptionsButton option1Name="Registros" option2Name="Resgates" optionSetter={setIsRecordHistorySelected}/>
             <RecordHistoryHeaderForm onSubmit={(event) => handleFormSubmit(event)}>
                 <div className="RecordHistoryFilters">
                     <div>
@@ -192,6 +235,16 @@ export default function RecordHistory({initialData, initialPageNumber, initialTo
                         <input type="date" id='endDate' name='endDate' disabled={!isDateFilterEnabled} value={endDateFilter} onChange={(event) => setEndDateFilter(event.target.value)}/>
                         {datesError.error ? <span style={{color:'red'}}>{datesError.message}</span> : ''}
                     </div>
+
+                    <div>
+                    <input type='checkbox' name='excludeRedeemed' checked={isRedeemedFilterEnabled} onChange={(e) => setIsRedeemedFilterEnabled(e.target.checked)}/>
+                    Excluir pontos resgatados.
+                    </div>
+                    
+                    <div>
+                    <input type='checkbox' name='includeCanceled' checked={isCanceledFilterEnabled} onChange={(e) => setIsCanceledFilterEnable(e.target.checked)}/>
+                    Incluir pontos cancelados.
+                    </div>
                 </div>
 
                 <button type='submit'>Atualizar</button>
@@ -205,8 +258,11 @@ export default function RecordHistory({initialData, initialPageNumber, initialTo
                     ))}
                 </select>
             </PaginationForm>
-
-            <RecordHistoryTable initialData={tableData}/>
+            
+            {
+                isRecordHistorySelected ? <RecordHistoryTable initialData={tableData} includeRedeemInfo={true}/> : <RedeemHistoryTable initialData={tableData}/>
+            }
+            
 
         </RecordHistoryContainer>
     )

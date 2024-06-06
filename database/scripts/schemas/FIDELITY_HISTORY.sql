@@ -5,5 +5,6 @@ create table app_fidelidade.fidelity_history (
 	target tinyint unsigned,
 	created_at timestamp(1) not null default current_timestamp(1),
 	redeemed_at timestamp null default null,
-	redeem_id int null default null
+	redeem_id int null default null,
+	canceled_at timestamp(1) null default null
 );

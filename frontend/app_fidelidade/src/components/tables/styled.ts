@@ -2,7 +2,7 @@
 //external dependencies
 import styled from "styled-components";
 
-export const RecordHistoryTableStyled = styled.table`
+export const HistoryTableStyled = styled.table`
     width: 100%;
     border: 2px solid black;
     border-radius: 15px;

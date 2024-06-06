@@ -22,16 +22,19 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
 
-    async getRecords(userId: string, offset: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any> {
+    async getRecords(userId: string, offset: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<any> {
         //TEMP: validate offset and pageSize againts sql injection
         let sql = `
         SELECT
             phone,
-            created_at
+            created_at,
+            redeemed_at,
+            canceled_at
         FROM
             ${process.env.MYSQL_DATABASE as string}.fidelity_history
         WHERE
-            id = UUID_TO_BIN(?, TRUE)`;
+            id = UUID_TO_BIN(?, TRUE)
+            `;
         const parameters: Array<string | number> = [userId];
 
         if (phone !== undefined) {
@@ -41,8 +44,17 @@ class FidelityRepository implements IFidelityRepository {
 
         if (initialDate !== undefined && endDate !== undefined) {
             sql += ' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)'
+
             parameters.push(initialDate);
             parameters.push(endDate);
+        }
+
+        if (excludeRedeemed) {
+            sql += ' AND redeemed_at IS NULL'
+        }
+
+        if (includeCanceled == undefined || includeCanceled == false) {
+            sql += ' AND canceled_at IS NULL'
         }
 
         sql += `
@@ -61,14 +73,41 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
 
-    async getRecordsCount(userId: string, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number> {
+    async deleteFidelityRecord(userId: string, phone: number, timestamp: string): Promise<string> {
+        //Only records that have not been redeemed can be deleted.
+        const sql = `
+        CALL CancelPoints(?,?,?)
+        `;
+
+        const parameters = [userId, phone, timestamp];
+        try {
+            //TEMP: it is necessary to use the selectQuery for this stored procedure because the last execution of this procedure is an selecte statment that return some values.
+            const result = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
+            const row = result[0][0]
+
+            if (row.affected_rows == 1) {
+                return row.canceled_at;
+            } else if (row.affected_rows == 0) {
+                //TEMP: send this error in the route. It is possible that the record exists but has already been redeemed. How to treat this ?
+                throw new Error('Not found');
+            } else {
+                //TEMP: How should I send this error in the route ? Should I ?
+                throw new Error('More than one record deleted.');
+            }
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async getRecordsCount(userId: string, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<number> {
         let sql = `
         SELECT
             count(*) as count
         FROM
             ${process.env.MYSQL_DATABASE as string}.fidelity_history
         WHERE
-            id = UUID_TO_BIN(?, TRUE)`;
+            id = UUID_TO_BIN(?, TRUE)
+            `;
         const parameters: Array<string | number> = [userId];
 
         if (phone !== undefined) {
@@ -80,6 +119,14 @@ class FidelityRepository implements IFidelityRepository {
             sql += ' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)'
             parameters.push(initialDate);
             parameters.push(endDate);
+        }
+
+        if (excludeRedeemed) {
+            sql += ' AND redeemed_at IS NULL'
+        }
+
+        if (includeCanceled == undefined || includeCanceled == false) {
+            sql += ' AND canceled_at IS NULL'
         }
         
         try {
@@ -104,7 +151,9 @@ class FidelityRepository implements IFidelityRepository {
         WHERE
             id = UUID_TO_BIN(?, TRUE)
             AND phone = ?
-            AND redeemed_at IS NULL`;
+            AND redeemed_at IS NULL
+            AND canceled_at IS NULL`;
+
         const parameters: Array<string | number> = [userId, phone];
 
         if (initialDate !== undefined && endDate !== undefined) {
@@ -137,6 +186,7 @@ class FidelityRepository implements IFidelityRepository {
             id = UUID_TO_BIN(?, TRUE)
             AND phone = ?
             AND redeemed_at IS NULL
+            AND canceled_at IS NULL
         ORDER BY
             created_at ASC
         LIMIT 1
@@ -232,16 +282,84 @@ class FidelityRepository implements IFidelityRepository {
 
         try {
             const result = await mysqlClient.callProcedure(sql, parameters) as ResultSetHeader;
-            console.log(result);
-            /*
-            if (result.affectedRows != target) {
-                //TEMP: how should I treat this error ?
-                throw new Error('Wrong number of updated rows!');
-            }
-            */
+            
         } catch (error) {
 
             throw error;
+        }
+    }
+
+    async getRedeemRecords(userId: string, offset: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any> {
+        //TEMP: validate offset and pageSize againts sql injection
+        let sql = `
+        SELECT
+            phone,
+            points,
+            created_at
+        FROM
+            ${process.env.MYSQL_DATABASE as string}.redeem_history
+        WHERE
+            id = UUID_TO_BIN(?, TRUE)`;
+        const parameters: Array<string | number> = [userId];
+
+        if (phone !== undefined) {
+            sql += ' AND phone = ?'
+            parameters.push(phone);
+        }
+
+        if (initialDate !== undefined && endDate !== undefined) {
+            sql += ' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)'
+            parameters.push(initialDate);
+            parameters.push(endDate);
+        }
+
+        sql += `
+        ORDER BY
+            created_at DESC
+        LIMIT ${pageSize}
+        OFFSET ${offset}
+        `;
+        
+        try {
+            const result = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
+
+            return result;
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async getRedeemRecordsCount(userId: string, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number> {
+        let sql = `
+        SELECT
+            count(*) as count
+        FROM
+            ${process.env.MYSQL_DATABASE as string}.redeem_history
+        WHERE
+            id = UUID_TO_BIN(?, TRUE)`;
+        const parameters: Array<string | number> = [userId];
+
+        if (phone !== undefined) {
+            sql += ' AND phone = ?'
+            parameters.push(phone);
+        }
+
+        if (initialDate !== undefined && endDate !== undefined) {
+            sql += ' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)'
+            parameters.push(initialDate);
+            parameters.push(endDate);
+        }
+        
+        try {
+            const result = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
+
+            if (result.length == 1) {
+                return result[0].count;
+            } else {
+                throw new Error('Error in counting redeem record history.');
+            }
+        } catch (error) {
+            throw error
         }
     }
 }

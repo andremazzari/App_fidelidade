@@ -14,6 +14,7 @@ class Utils {
     }
 
     static formatTimestamp(unformattedTimestamp: string) {
+        //TEMP: update this to use the moment-timezone library
         const timestamp = new Date(unformattedTimestamp);
 
         const year = timestamp.getFullYear().toString().slice(-2); // Get last two digits of the year
@@ -23,8 +24,30 @@ class Utils {
         const minutes = ("0" + timestamp.getMinutes()).slice(-2); // Add leading zero if needed
         const seconds = ("0" + timestamp.getSeconds()).slice(-2); // Add leading zero if needed
 
+
         const formattedTimestamp = `${day}/${month}/${year} às ${hour}:${minutes}:${seconds}`;
         return formattedTimestamp;
+    }
+
+    static formatTimestampToMySQL(unformattedTimestamp: string) {
+        //TEMP: update this to use the moment-timezone library
+        // Parse the input timestamp to a Date object
+        const date = new Date(unformattedTimestamp);
+
+        // Extract the individual components
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+
+        // Format the milliseconds to one decimal place
+        const formattedMilliseconds = milliseconds.substring(0, 1);
+
+        // Construct the final formatted string
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${formattedMilliseconds}`;
     }
 
     static handlePhoneNumberChange(event: ChangeEvent<HTMLInputElement>, setUnformattedPhoneNumber: React.Dispatch<React.SetStateAction<string>>, setFormattedPhoneNumber: React.Dispatch<React.SetStateAction<string>>): void {

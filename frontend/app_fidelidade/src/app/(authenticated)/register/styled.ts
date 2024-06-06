@@ -6,8 +6,10 @@ export const RegisterPageContainer = styled.div`
     width: 100%;
     height: 100%;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
+    gap: 40px;
     padding-top: 60px;
 `;
 

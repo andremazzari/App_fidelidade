@@ -1,5 +1,5 @@
 //external dependencies
-import {object, string, ref} from 'yup';
+import {object, string, ref, boolean} from 'yup';
 
 //-------------------------------------
 //VALIDATION FUNCTIONS
@@ -67,7 +67,22 @@ export const GetRecordsSchema = object({
     pageSize: string().required().matches(/^\d+$/),
     phone: phoneValidationNotRequired,
     initialDate: initialDateValidation,
-    endDate: endDateValidation
+    endDate: endDateValidation,
+    excludeRedeemed: boolean(),
+    includeCanceled: boolean()
+}).noUnknown().strict()
+
+export const DeleteFidelitySchema = object({
+    userId: string().required().uuid(),
+    phone: phoneValidationRequired,
+    timestamp: string().required().test('isTiestampValid', 'Invalid timestmp', function(timestamp) {
+        const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d$/;
+        const isValidFormat = timestampRegex.test(timestamp);
+
+        const isValidDate = isValidFormat && !isNaN(new Date(timestamp.replace(' ', 'T')).getTime());
+
+        return isValidDate;
+    })
 }).noUnknown().strict()
 
 export const GetRecordsCountPagesSchema = object({
@@ -75,7 +90,9 @@ export const GetRecordsCountPagesSchema = object({
     pageSize: string().required().matches(/^\d+$/),
     phone: phoneValidationNotRequired,
     initialDate: initialDateValidation,
-    endDate: endDateValidation
+    endDate: endDateValidation,
+    excludeRedeemed: boolean(),
+    includeCanceled: boolean()
 }).noUnknown().strict()
 
 export const GetFidelityInfoSchema = object({
@@ -106,3 +123,12 @@ export const RedeemFidelitySchema = object({
     userId: string().required().uuid(),
     phone: phoneValidationRequired
 }).noUnknown().strict();
+
+export const GetRedeemRecordsSchema = object({
+    userId: string().required().uuid(),
+    pageNumber: string().required().matches(/^\d+$/),
+    pageSize: string().required().matches(/^\d+$/),
+    phone: phoneValidationNotRequired,
+    initialDate: initialDateValidation,
+    endDate: endDateValidation
+}).noUnknown().strict()
