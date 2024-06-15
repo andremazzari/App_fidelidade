@@ -104,9 +104,9 @@ export const GetFidelityConfigSchema = object({
     userId: string().required().uuid()
 }).noUnknown().strict()
 
-export const UpdateFidelityTargetSchema = object({
+export const UpdateFidelityConfigSchema = object({
     userId: string().required().uuid(),
-    newTarget: string().required().matches(/^\d+$/, 'Invalid target value').test('IsTargetValid', 'Invalid target value', (target) => {
+    target: string().required().matches(/^\d+$/, 'Invalid target value').test('IsTargetValid', 'Invalid target value', (target) => {
         if (target == '' || isNaN(parseInt(target))) {
             return false
         }
@@ -116,7 +116,8 @@ export const UpdateFidelityTargetSchema = object({
         }
 
         return true;
-    })
+    }),
+    whatsappMessageEnabled: boolean().required()
 }).noUnknown().strict()
 
 export const RedeemFidelitySchema = object({

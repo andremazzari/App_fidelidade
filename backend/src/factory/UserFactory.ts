@@ -4,7 +4,8 @@ import UserService from "../services/UserService"
 import UserRepository from "../repositories/UserRepository";
 import { IUserController, IUserService, IUserRepository } from "../models/User";
 import EmailService from "../services/EmailService";
-import FidelityRepository from "../repositories/FidelityRepository";
+import FidelityFactory from "./FidelityFactory";
+import FacebookFactory from "./FacebookFactory";
 
 class UserFactory {
     static controller(): IUserController {
@@ -17,7 +18,9 @@ class UserFactory {
         return new UserService(
             this.repository(),
             new EmailService(),
-            new FidelityRepository()
+            FacebookFactory.service(),
+            FidelityFactory.repository(),
+            FacebookFactory.repository()
         )
     }
 

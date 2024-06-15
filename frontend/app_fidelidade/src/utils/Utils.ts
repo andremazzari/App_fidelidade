@@ -33,7 +33,7 @@ class Utils {
         //TEMP: update this to use the moment-timezone library
         // Parse the input timestamp to a Date object
         const date = new Date(unformattedTimestamp);
-
+        
         // Extract the individual components
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based

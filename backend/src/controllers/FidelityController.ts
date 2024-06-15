@@ -4,7 +4,7 @@ import { Request, Response } from "express";
 
 //internal dependencies
 import { IFidelityController, IFidelityService } from "../models/Fidelity";
-import { RegisterFidelitySchema, GetRecordsSchema, GetRecordsCountPagesSchema, UpdateFidelityTargetSchema, GetFidelityConfigSchema, GetFidelityInfoSchema, RedeemFidelitySchema, GetRedeemRecordsSchema, DeleteFidelitySchema } from "../schemas/FidelitySchema";
+import { RegisterFidelitySchema, GetRecordsSchema, GetRecordsCountPagesSchema, UpdateFidelityConfigSchema, GetFidelityConfigSchema, GetFidelityInfoSchema, RedeemFidelitySchema, GetRedeemRecordsSchema, DeleteFidelitySchema } from "../schemas/FidelitySchema";
 import Utils from "../utils/Utils";
 
 class FidelityController implements IFidelityController {
@@ -63,7 +63,7 @@ class FidelityController implements IFidelityController {
         const userId = req.body.userId;
         const phone = req.body.phone;
         const timestamp = req.body.timestamp;
-
+        
         try {
             await DeleteFidelitySchema.validate({userId, phone, timestamp});
         } catch (error) {
@@ -150,19 +150,20 @@ class FidelityController implements IFidelityController {
         }
     }
 
-    async updateFidelityTarget(req: Request, res: Response): Promise<Response> {
+    async updateFidelityConfig(req: Request, res: Response): Promise<Response> {
         //TEMP: in the future, use the id of the store.
         const userId = req.body.userId;
-        const newTarget = req.body.target;
+        const target = req.body.target;
+        const whatsappMessageEnabled = Utils.StringToBoolean(req.body.whatsappMessageEnabled as string | undefined);
 
         try {
-            await UpdateFidelityTargetSchema.validate({userId, newTarget});
+            await UpdateFidelityConfigSchema.validate({userId, target, whatsappMessageEnabled});
         } catch (error) {
             return res.status(400).json({error});
         }
-
+        
         try {
-            await this.fidelityService.updateFidelityTarget(userId, newTarget);
+            await this.fidelityService.updateFidelityConfig(userId, target, whatsappMessageEnabled!);
 
             return res.status(204).json({});
         } catch (error) {

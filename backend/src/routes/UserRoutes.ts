@@ -3,6 +3,7 @@ import { Router, Request, Response } from "express";
 
 //internal dependencies
 import UserFactory from "../factory/UserFactory";
+import { AuthenticationMiddleware } from "../middlewares/AuthenticationMiddleware";
 
 const userController = UserFactory.controller();
 
@@ -14,5 +15,6 @@ userRouter.post('/user/verifyEmail', (req: Request, res: Response) => userContro
 
 //login routes
 userRouter.post('/user/login', (req: Request, res: Response) => userController.login(req, res));
+userRouter.post('/user/whatsapp/login', AuthenticationMiddleware, (req: Request, res: Response) => userController.whatsappLogin(req, res));
 
 export default userRouter;

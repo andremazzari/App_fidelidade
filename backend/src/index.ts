@@ -7,6 +7,7 @@ var cookieParser = require('cookie-parser');
 //internal dependencies
 import userRouter from './routes/UserRoutes';
 import fidelityRouter from './routes/FidelityRoutes';
+import facebookRouter from './routes/FacebookRoutes';
 
 
 class Server {
@@ -42,6 +43,7 @@ class Server {
         //routes
         this.server.use(userRouter);
         this.server.use(fidelityRouter);
+        this.server.use(facebookRouter);
 
         this.server.listen(process.env.PORT);
     }

@@ -9,10 +9,12 @@ export default async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname;
     let loginStatus = await verifySession();
 
+    //TEMP: verify if I cannot use route groups for this
     const nonRestrictedPaths: string[] = [
         '/',
         '/login',
-        '/verifyEmail'
+        '/verifyEmail',
+        '/fbOauth'
     ]
 
     let deleteToken = false;

@@ -127,3 +127,19 @@ export async function decodeJWT(token: string, complete: boolean = false) {
     //TEMP: tratar erro
     return jwt.decode(token, {json: true, complete: complete}) as Record<string, unknown>;
 }
+
+export async function whatsappLogin(code: string): Promise<boolean> {
+    //TEMP: define the interface to returned errors
+    const response = await LoginRequests.whatsappLogin(code);
+
+    if (response.status != 200 || response.data.error) {
+        //TEMP: treat different kind of errors
+        console.log('Error in whatsapp login');
+        console.log(response.data);
+
+        return false
+    }
+    console.log(response.data)
+    //TEMP: should I store the token in a cookie ?
+    return true
+}

@@ -1,3 +1,4 @@
+//internal dependencies
 import RequestsUtils, {sendProps} from "@/utils/RequestUtils";
 
 class LoginRequests {
@@ -44,6 +45,25 @@ class LoginRequests {
         } catch (error) {
             //TEMP: treat this error
             throw new Error('Error in request to create user: ' + error);
+        }
+    }
+
+    static async whatsappLogin(code: string) {
+        const options: sendProps = {
+            method: 'POST',
+            url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/user/whatsapp/login`,
+            body: {code},
+            contentType: 'form-urlencoded',
+            cache: 'no-store',
+            setAuthHeader: true
+        }
+
+        try {
+            const response = await RequestsUtils.send(options);
+            return response;
+        } catch (error) {
+            //TEMP: treat this error
+            throw new Error('Error in request to login in whatsapp: ' + error);
         }
     }
 }

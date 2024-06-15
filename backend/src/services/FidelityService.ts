@@ -1,20 +1,31 @@
 //internal dependencies
 import { json } from "stream/consumers";
 import { IFidelityService, IFidelityRepository, FidelityInfo } from "../models/Fidelity";
+import { IFacebookService } from "../models/Facebook";
 
 class FidelityService implements IFidelityService {
-    constructor(private fidelityRepository: IFidelityRepository) {}
+    constructor(
+        private facebookService: IFacebookService,
+        private fidelityRepository: IFidelityRepository
+    ) {}
 
     async registerFidelity(phone: number, userId: string): Promise<any> {
         //TEMP: review errors and return types
         try {
-            const response = await this.fidelityRepository.registerFidelity(phone, userId);
+            const createdAt = await this.fidelityRepository.registerFidelity(phone, userId);
 
-            if (response) {
-                return {status: 201, json: {}}
-            } else {
-                throw new Error('Failed to create fidelity resource.')
+            //If enabled, notify user via whatsapp.
+            const config = await this.fidelityRepository.getFidelityConfig(userId);
+            
+            if (config.whatsapp_message_enabled) {
+                //send whatsapp message
+                //get current points and target
+                const {target, points} = await this.getFidelityInfo(userId, phone);
+
+                const result = await this.facebookService.sendFidelityWhatsappMessage(userId, phone, createdAt, points, target);
             }
+
+            return {status: 201, json: {}}
         } catch (error) {
             throw error;
         }
@@ -87,9 +98,9 @@ class FidelityService implements IFidelityService {
         } 
     }
 
-    async updateFidelityTarget(userId: string, newTarget: number): Promise<boolean> {
+    async updateFidelityConfig(userId: string, target: number, whatsappMessageEnabled: boolean): Promise<boolean> {
         try {
-            return await this.fidelityRepository.updateFidelityTarget(userId, newTarget);
+            return await this.fidelityRepository.updateFidelityConfig(userId, target, whatsappMessageEnabled);
         } catch (error) {
             throw error
         } 
@@ -102,8 +113,6 @@ class FidelityService implements IFidelityService {
             if (points >= target) {
                 //redeem points
                 await this.fidelityRepository.redeemFidelity(userId, phone, target);
-
-                //TEMP: register this redeem action in a table.
 
                 //get updated values for points and target
                 const newValues = await this.getFidelityInfo(userId, phone);

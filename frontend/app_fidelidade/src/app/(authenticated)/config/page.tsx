@@ -1,7 +1,9 @@
 //internal dependencies
 import { PageContainer } from "./styled";
-import FidelityConfig from "@/containers/FidelityConfig/FidelityConfig";
+import FidelityConfig, {configFields} from "@/containers/FidelityConfig/FidelityConfig";
 import RequestsUtils, {sendProps} from "@/utils/RequestUtils";
+import FacebookLogin from "@/components/buttons/FacebookLogin/FacebookLogin";
+import SearchWhatsappTemplates from "@/containers/Whatsapp/SearchTemplates/SearchWhatsappTemplate";
 
 export default async function Page() {
     const options: sendProps = {
@@ -19,10 +21,17 @@ export default async function Page() {
         console.log('Erro ao ler valor inicial do target')
     }
 
+    const config: configFields ={
+        target: response.data.target,
+        whatsappMessageEnabled: response.data.whatsapp_message_enabled
+    }
+
     return (
         <>
             <PageContainer>
-                <FidelityConfig initialTarget={response.data.target}/>
+                <FidelityConfig config={config}/>
+                <FacebookLogin/>
+                <SearchWhatsappTemplates/>
             </PageContainer>
         </>
     )

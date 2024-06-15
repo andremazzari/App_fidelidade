@@ -2,22 +2,23 @@
 import { IFidelityRepository } from "../models/Fidelity";
 import { mysqlClient } from "../connectors/MySQL";
 import { ResultSetHeader } from "mysql2";
+import Utils from "../utils/Utils";
 
 class FidelityRepository implements IFidelityRepository {
-    async registerFidelity(phone: number, userId: string): Promise<boolean> {
+    async registerFidelity(phone: number, userId: string): Promise<string> {
         const sql = `
-        INSERT INTO ${process.env.MYSQL_DATABASE as string}.fidelity_history (id, phone, points, target)
-        VALUES (UUID_TO_BIN(?, TRUE), ?, 1, (SELECT target FROM ${process.env.MYSQL_DATABASE as string}.fidelity_config WHERE id = UUID_TO_BIN(?, TRUE)))
+        INSERT INTO ${process.env.MYSQL_DATABASE as string}.fidelity_history (id, phone, points, target, created_at)
+        VALUES (UUID_TO_BIN(?, TRUE), ?, 1, (SELECT target FROM ${process.env.MYSQL_DATABASE as string}.fidelity_config WHERE id = UUID_TO_BIN(?, TRUE)), ?)
         `;
-
-        const parameters = [userId, phone, userId];
+        const timestamp = Utils.currentTimestampToMySQL(1);
+        const parameters = [userId, phone, userId, timestamp];
 
         try {
-            const result = await mysqlClient.insertQuery(sql, parameters);
-            //TEMP: verify if the insertion ocurred correctly
-            return true
+            await mysqlClient.insertQuery(sql, parameters);
+            
+            return timestamp
         } catch (error) {
-            //TEMP: or return false ?
+            //TEMP: handle this error
             throw error
         }
     }
@@ -207,14 +208,15 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
 
-    async createFidelityTarget(userId: string): Promise<void> {
+    async createFidelityConfig(userId: string): Promise<void> {
         const defaultTarget = 10; //TEMP: should this default be in the table definition ?
+        const defaultWhatsappMessageEnabled = false;
         const sql = `
-            INSERT INTO ${process.env.MYSQL_DATABASE as string}.fidelity_config (id, target)
-            VALUES (UUID_TO_BIN(?, TRUE), ?)
+            INSERT INTO ${process.env.MYSQL_DATABASE as string}.fidelity_config (id, target, whatsapp_message_enabled)
+            VALUES (UUID_TO_BIN(?, TRUE), ?, ?)
         `;
 
-        const parameters = [userId, defaultTarget];
+        const parameters = [userId, defaultTarget, defaultWhatsappMessageEnabled];
 
         try {
             await mysqlClient.insertQuery(sql, parameters)
@@ -226,7 +228,8 @@ class FidelityRepository implements IFidelityRepository {
     async getFidelityConfig(userId: string): Promise<any> {
         const sql = `
         SELECT
-            target
+            target,
+            whatsapp_message_enabled
         FROM
             ${process.env.MYSQL_DATABASE as string}.fidelity_config
         WHERE
@@ -251,15 +254,15 @@ class FidelityRepository implements IFidelityRepository {
         }        
     }
 
-    async updateFidelityTarget(userId: string, newTarget: number): Promise<boolean> {
+    async updateFidelityConfig(userId: string, target: number, whatsappMessageEnabled: boolean): Promise<boolean> {
         //TEMP: use the id of the store
         const sql = `
         UPDATE ${process.env.MYSQL_DATABASE as string}.fidelity_config
-        SET target = ?
+        SET target = ?, whatsapp_message_enabled = ?
         WHERE id = UUID_TO_BIN(?, TRUE) 
         `;
 
-        const parameters = [newTarget, userId];
+        const parameters = [target, whatsappMessageEnabled, userId];
         try {
             const result = await mysqlClient.updateQuery(sql, parameters) as ResultSetHeader;
             if (result.affectedRows == 1) {

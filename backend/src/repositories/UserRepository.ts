@@ -1,5 +1,5 @@
 //internal dependencies
-import { User, UserIGAccount, IUserRepository } from "../models/User";
+import { User, IUserRepository } from "../models/User";
 import { mysqlClient } from "../connectors/MySQL";
 import { QueryResult, ResultSetHeader, RowDataPacket } from "mysql2";
 

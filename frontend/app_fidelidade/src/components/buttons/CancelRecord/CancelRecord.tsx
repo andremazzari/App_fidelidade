@@ -7,14 +7,14 @@ import { CancelRecordContainer } from "./styled"
 import Utils from "@/utils/Utils"
 import CancelRecordModal from "@/components/modals/CancelRecordModal/CancelRecordModal"
 
-interface CancelRecord {
+interface CancelRecordProps {
     phone: number
     timestamp: string
     redeemed: boolean
     canceled?: boolean
     canceledAt?: string
 }
-export default function CancelRecord({phone, timestamp, redeemed, canceled, canceledAt}: CancelRecord) {
+export default function CancelRecord({phone, timestamp, redeemed, canceled, canceledAt}: CancelRecordProps) {
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isRecordCanceled, setIsRecordCanceled] = useState<boolean>(canceled ? true : false);
     const [canceledTimestamp, setCanceledTimestamp] = useState<string | undefined>(canceledAt);

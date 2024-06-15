@@ -48,15 +48,22 @@ export interface UpdateFidelityConfigFormProps {
 }
 
 export async function updateFidelityConfig(prevState: UpdateFidelityConfigFormProps, formData: FormData) {
-    const target = formData.get('fidelityTarget') as string;
+    const target = formData.get('target') as string;
+    let whatsappMessageEnabled: string | boolean | null = formData.get('whatsappMessageEnabled') as string | null;
 
     const validationResult = validateFidelityTarget(target);
+
+    if (whatsappMessageEnabled == 'on') {
+        whatsappMessageEnabled = true
+    } else {
+        whatsappMessageEnabled = false
+    }
 
     if (!validationResult.error) {
         const options: sendProps = {
             method: 'PUT',
             url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/fidelity/config`,
-            body: {target},
+            body: {target, whatsappMessageEnabled},
             contentType: 'form-urlencoded',
             cache: 'no-store',
             setAuthHeader: true

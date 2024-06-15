@@ -16,7 +16,7 @@ fidelityRouter.delete('/fidelity', AuthenticationMiddleware, (req: Request, res:
 fidelityRouter.get('/fidelity/countPages', AuthenticationMiddleware, (req: Request, res: Response) => fidelityController.getRecordsCountPages(req, res));
 fidelityRouter.get('/fidelity/info', AuthenticationMiddleware, (req: Request, res: Response) => fidelityController.getFidelityInfo(req, res))
 fidelityRouter.get('/fidelity/config', AuthenticationMiddleware, (req: Request, res: Response) => fidelityController.getFidelityConfig(req, res));
-fidelityRouter.put('/fidelity/config', AuthenticationMiddleware, (req: Request, res: Response) => fidelityController.updateFidelityTarget(req, res));
+fidelityRouter.put('/fidelity/config', AuthenticationMiddleware, (req: Request, res: Response) => fidelityController.updateFidelityConfig(req, res));
 fidelityRouter.get('/fidelity/redeem', AuthenticationMiddleware, (req: Request, res: Response) => fidelityController.getRedeemRecords(req, res))
 fidelityRouter.post('/fidelity/redeem', AuthenticationMiddleware, (req: Request, res: Response) => fidelityController.redeemFidelity(req, res));
 

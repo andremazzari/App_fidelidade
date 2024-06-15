@@ -5,7 +5,8 @@ import { Request, Response } from "express";
 import { UserGetByIdSchema,
          UserAddSchema,
          UserVerifyEmail,
-        UserLoginSchema} from "../schemas/UserSchema";
+        UserLoginSchema,
+        UserWhatsappLogin} from "../schemas/UserSchema";
 import { IUserController, IUserService } from "../models/User";
 
 class UserController implements IUserController {
@@ -82,6 +83,26 @@ class UserController implements IUserController {
                 status = 200;
             }
             return res.status(status).json(result);
+        } catch (error) {
+            return res.status(500).json({error});
+        }
+    }
+
+    async whatsappLogin(req: Request, res: Response): Promise<Response> {
+        const userId = req.body.userId;
+        const code = req.body.code;
+
+        try {
+            await UserWhatsappLogin.validate({userId, code});
+        } catch(error) {
+            return res.status(400).json({error});
+        }
+
+        try {
+            const result = await this.userService.whatsappLogin(userId, code);
+            
+            //TEMP: handle errors and different types of returns
+            return res.status(200).json(result);
         } catch (error) {
             return res.status(500).json({error});
         }

@@ -2,16 +2,19 @@
 import {v4 as uuidv4} from 'uuid';
 
 //internal dependencies
-import { User, UserIGAccount, FacebookLoginToken, LoginResult, IUserService, IUserRepository } from "../models/User";
+import { User, LoginResult, IUserService, IUserRepository } from "../models/User";
 import { IFidelityRepository } from '../models/Fidelity';
 import Utils from '../utils/Utils';
 import EmailService from './EmailService';
+import { IFacebookService, IFacebookRepository, isFacebookAPIError } from '../models/Facebook';
 
 class UserService implements IUserService {
     constructor(
         private userRepository: IUserRepository,
         private emailService: EmailService,
-        private fidelityRepository: IFidelityRepository
+        private facebookService: IFacebookService,
+        private fidelityRepository: IFidelityRepository,
+        private facebookRepository: IFacebookRepository
     ) {}
 
     async getById(id_user: string): Promise<User | {}> {
@@ -50,7 +53,7 @@ class UserService implements IUserService {
             const id_user = await this.userRepository.createUser(body);
 
             //create default fidelity config
-            this.fidelityRepository.createFidelityTarget(id_user);
+            this.fidelityRepository.createFidelityConfig(id_user);
 
             //Create session token
             const result = this.createSessionTokens(id_user, true);
@@ -102,6 +105,57 @@ class UserService implements IUserService {
         }
         
         return result;
+    }
+
+    async whatsappLogin(userId: string, code: string): Promise<any> {
+        //TEMP: create an interface and codes to handle each error
+        const tokenData = await this.facebookService.getAccessToken(code);
+
+        if (isFacebookAPIError(tokenData)) {
+            //TEMP: handle this error
+            return tokenData
+        }
+
+        const debugToken = await this.facebookService.debugToken(tokenData.access_token);
+
+        if (debugToken.data.is_valid != true) {
+            //Error: invalid token
+            //TEMP: handle this error
+            return {error: 'Invalid token'}
+        }
+
+        const missingPermissions = this.facebookService.checkWhatsappPermissions(debugToken.data.scopes);
+
+        if (missingPermissions.length > 0) {
+            //Error: user did not give all necessary permissions
+            return {missingPermissions}
+        }
+
+        //TEMP: consider the case in which it is not the first login of the user, but only and re-login, and there is already a waba registered.
+        const wabaId = this.facebookService.getWABAId(debugToken.data.granular_scopes);
+
+        if (!wabaId) {
+            //Error: no WABA id was shared
+            return {wabaId}
+        }
+
+        const wabaInfo = await this.facebookService.getWABAInfo(wabaId, tokenData.access_token);
+
+        if (isFacebookAPIError(wabaInfo)) {
+            //TEMP: handle this error
+            return wabaInfo
+        }
+
+        //Save this info in the database
+        //TEMP: handle the case in which the user is only reconnecting
+        if (!this.facebookService.checkWhatsappInfoBeforeDB(tokenData.access_token, debugToken, wabaInfo)) {
+            //Whatsapp info violates the constraints in the database
+            //TEMP: handle this error
+            return {error: 'Whatsapp info violates the constraints in the database'}
+        }
+        this.facebookRepository.upsertWhatsappInfo(userId, tokenData.access_token, debugToken, wabaInfo);
+
+        return {ok: 'ok!'};
     }
 }
 

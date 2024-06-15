@@ -38,7 +38,7 @@ class MySQLClient {
         }
     }
 
-    async selectQuery(sqlQuery: string, parameters?: Array<string | number>) {
+    async selectQuery(sqlQuery: string, parameters?: Array<string | number | boolean | null>) {
         try {
             if (this.connection == null) {
                 throw new Error('Error connecting to mysql server');
@@ -59,7 +59,7 @@ class MySQLClient {
         }
     }
 
-    async insertQuery(sqlQuery: string, parameters?: Array<string | number | null>) {
+    async insertQuery(sqlQuery: string, parameters?: Array<string | number | boolean | null>) {
         try {
             if (this.connection == null) {
                 throw new Error('Error connecting to mysql server');
@@ -80,7 +80,7 @@ class MySQLClient {
         }
     }
 
-    async updateQuery(sqlQuery: string, parameters?: Array<string | number | null>) {
+    async updateQuery(sqlQuery: string, parameters?: Array<string | number | boolean | null>) {
         try {
             if (this.connection == null) {
                 throw new Error('Error connecting to mysql server');
@@ -101,7 +101,7 @@ class MySQLClient {
         }
     }
 
-    async deleteQuery(sqlQuery: string, parameters?: Array<string | number | null>) {
+    async deleteQuery(sqlQuery: string, parameters?: Array<string | number | boolean | null>) {
         try {
             if (this.connection == null) {
                 throw new Error('Error connecting to mysql server');
@@ -122,7 +122,7 @@ class MySQLClient {
         }
     }
 
-    async callProcedure(sqlQuery: string, parameters?: Array<string | number | null>) {
+    async callProcedure(sqlQuery: string, parameters?: Array<string | number | boolean | null>) {
         try {
             if (this.connection == null) {
                 throw new Error('Error connecting to mysql server');

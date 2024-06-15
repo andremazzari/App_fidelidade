@@ -9,13 +9,15 @@ import { updateFidelityConfig, UpdateFidelityConfigFormProps } from "@/services/
 
 interface FidelityConfigFormContentProps {
     formState: UpdateFidelityConfigFormProps
-    initialTarget: string
+    config: configFields
 }
 
-function FidelityConfigFormContent({formState, initialTarget}: FidelityConfigFormContentProps) {
+function FidelityConfigFormContent({formState, config}: FidelityConfigFormContentProps) {
+    //TEMP: only allow to enable whatsapp messages if it is logged in whatsapp account (with everything ok). Otherwise, should error message.
     const {pending} = useFormStatus();
 
-    const [fidelityTargetFilter, setFidelityTargetFilter] = useState(initialTarget);
+    const [fidelityTargetFilter, setFidelityTargetFilter] = useState(config.target);
+    const [whatsappMessageFilter, setWhatsappMessageFilter] = useState(config.whatsappMessageEnabled);
 
     function handleFidelityTargetChange(event: ChangeEvent<HTMLInputElement>) {
         const newTarget = event.target.value;
@@ -29,23 +31,31 @@ function FidelityConfigFormContent({formState, initialTarget}: FidelityConfigFor
         <>
             {formState.message != '' && !pending ? <p style={formState.success ? {color: 'green'} : {color: 'red'}}>{formState.message}</p> : ''}
             <div>
-                Quantidade de pontos: <input id="fidelityTargetInput" name="fidelityTarget" type="text" value={fidelityTargetFilter} onChange={(event) => handleFidelityTargetChange(event)} pattern="\d*" inputMode="numeric" maxLength={3}/>
+                Quantidade de pontos: <input id="fidelityTargetInput" name="target" type="text" value={fidelityTargetFilter} onChange={(event) => handleFidelityTargetChange(event)} pattern="\d*" inputMode="numeric" maxLength={3}/>
+            </div>
+            <div>
+                Notificações de whatsapp ativadas: <input type='checkbox' id='whatsappMessageEnabled' name='whatsappMessageEnabled' checked={whatsappMessageFilter} onChange={() => setWhatsappMessageFilter(!whatsappMessageFilter)}/>
             </div>
             <button type="submit" disabled={pending}>Atualizar</button>
         </>
     )
 }
 
-interface FidelityConfigProps {
-    initialTarget: string
+export interface configFields {
+    target: string
+    whatsappMessageEnabled: boolean
 }
 
-export default function FidelityConfig({initialTarget}: FidelityConfigProps) {
+interface FidelityConfigProps {
+    config:configFields
+}
+
+export default function FidelityConfig({config}: FidelityConfigProps) {
     const [formState, formAction] = useFormState(updateFidelityConfig, {success: false, message: ''});
 
     return (
         <FidelityConfigForm action={formAction}>
-            <FidelityConfigFormContent formState={formState} initialTarget={initialTarget}/>
+            <FidelityConfigFormContent formState={formState} config={config}/>
         </FidelityConfigForm>
     )
 }

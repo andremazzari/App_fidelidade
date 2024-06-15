@@ -19,28 +19,18 @@ export interface LoginResult {
     refreshToken?: string
 }
 
-export interface UserIGAccount {
-    ig_user_id: string,
-    name: string,
-    username: string,
-    profile_picture_url: string
-}
-
-export interface FacebookLoginToken {
-    access_token: string
-    token_type: string
-    expires_in: string
-}
 
 //---------------------------------------
 // CLASS MODELS
 //---------------------------------------
 
+//TEMP: define the interface for the return types of services and repositories
 export interface IUserController {
     getById(req: Request, res: Response): Promise<Response>;
     createUser(req: Request, res: Response): Promise<Response>;
     verifyEmail(req: Request, res: Response): Promise<Response>;
     login(req: Request, res: Response): Promise<Response>;
+    whatsappLogin(req: Request, res: Response): Promise<Response>;
 }
 
 export interface IUserService {
@@ -48,6 +38,7 @@ export interface IUserService {
     createUser(user: User): Promise<LoginResult>;
     verifyEmail(verificationToken: string): Promise<any>;
     login(email: string, password: string): Promise<LoginResult>;
+    whatsappLogin(userId: string, code: string): Promise<any>
 }
 
 export interface IUserRepository {

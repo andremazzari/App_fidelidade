@@ -42,6 +42,7 @@ export const UserLoginSchema = object({
     password: string().required()
 }).noUnknown().strict()
 
-export const UserGetFacebookLoginToken = object({
+export const UserWhatsappLogin = object({
+    userId: string().required().uuid(),
     code: string().required()
-})
+}).noUnknown().strict();

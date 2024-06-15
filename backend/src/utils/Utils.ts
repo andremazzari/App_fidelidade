@@ -66,6 +66,33 @@ class Utils {
 
         return undefined
     }
+
+    static isEmptyObject(obj: any) {
+        return obj.constructor === Object && Object.keys(obj).length === 0;
+    }
+
+    static currentTimestampToMySQL(milliSeconds = 0) {
+        //TEMP: update this to use the moment-timezone library
+        // Parse the input timestamp to a Date object
+        const date = new Date();
+        
+        // Extract the individual components
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+
+        // Format the milliseconds to one decimal place
+        if (milliSeconds > 0) {
+            const formattedMilliseconds = milliseconds.substring(0, milliSeconds);
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${formattedMilliseconds}`;
+        }
+        
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
 }
 
 export default Utils;
