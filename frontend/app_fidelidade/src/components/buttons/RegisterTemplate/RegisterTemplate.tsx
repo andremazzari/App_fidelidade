@@ -1,13 +1,31 @@
 'use client'
 //external dependencies
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 
-export default function RegisterTemplate() {
+//internal dependencies
+import RegisterTemplateModal from "@/components/modals/RegisterTemplateModal/RegisterTemplateModal";
+import { getTemplateComponents, whatsappTemplateInfo } from "@/services/ServerActions/Facebook";
+
+interface RegisterTemplateProps {
+    templateInfo: whatsappTemplateInfo
+}
+export default function RegisterTemplate({templateInfo}: RegisterTemplateProps) {
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [templateComponents, setTemplateComponents] = useState<Array<any>>([]);
+
+    useEffect(() => {
+        setIsModalOpen(false);
+    }, [templateInfo])
+
+    async function handleRegisterClick() {
+        setTemplateComponents(await getTemplateComponents(templateInfo.templateId));
+        setIsModalOpen(true)
+    }
 
     return (
         <>
-        <button>Registar</button>
+        <button onClick={() => handleRegisterClick()}>Registar</button>
+        <RegisterTemplateModal isModalOpen={isModalOpen} onClose={() => setIsModalOpen(false)} templateComponents={templateComponents} templateInfo={templateInfo} />
         </>
     )
 }

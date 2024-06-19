@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+type dataTypes = Array<string | number | boolean | null>
+
 class MySQLClient {
     //TEMP: implement connection pool
     private connection: mysql.Connection | null = null;
@@ -38,7 +40,7 @@ class MySQLClient {
         }
     }
 
-    async selectQuery(sqlQuery: string, parameters?: Array<string | number | boolean | null>) {
+    async selectQuery(sqlQuery: string, parameters?: dataTypes) {
         try {
             if (this.connection == null) {
                 throw new Error('Error connecting to mysql server');
@@ -59,7 +61,7 @@ class MySQLClient {
         }
     }
 
-    async insertQuery(sqlQuery: string, parameters?: Array<string | number | boolean | null>) {
+    async insertQuery(sqlQuery: string, parameters?: dataTypes) {
         try {
             if (this.connection == null) {
                 throw new Error('Error connecting to mysql server');
@@ -80,7 +82,7 @@ class MySQLClient {
         }
     }
 
-    async updateQuery(sqlQuery: string, parameters?: Array<string | number | boolean | null>) {
+    async updateQuery(sqlQuery: string, parameters?: dataTypes) {
         try {
             if (this.connection == null) {
                 throw new Error('Error connecting to mysql server');
@@ -101,7 +103,7 @@ class MySQLClient {
         }
     }
 
-    async deleteQuery(sqlQuery: string, parameters?: Array<string | number | boolean | null>) {
+    async deleteQuery(sqlQuery: string, parameters?: dataTypes) {
         try {
             if (this.connection == null) {
                 throw new Error('Error connecting to mysql server');
@@ -122,7 +124,7 @@ class MySQLClient {
         }
     }
 
-    async callProcedure(sqlQuery: string, parameters?: Array<string | number | boolean | null>) {
+    async callProcedure(sqlQuery: string, parameters?: dataTypes) {
         try {
             if (this.connection == null) {
                 throw new Error('Error connecting to mysql server');

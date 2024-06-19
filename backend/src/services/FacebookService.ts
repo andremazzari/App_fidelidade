@@ -187,7 +187,7 @@ class FacebookService implements IFacebookService {
                 }
             }
         }
-
+        
         if (templateConfig.componentConfig != null) {
             body.template.components = templateConfig.componentConfig
         }
@@ -223,7 +223,7 @@ class FacebookService implements IFacebookService {
         }
     }
 
-    async searchWhatsappTemplate(userId: string, templateName: string): Promise<any> {
+    async searchWhatsappTemplate(userId: string, templateId: string | undefined, templateName: string | undefined, fields: string): Promise<any> {
         //TEMP: include the possibility of searching by id, use paging, etc.
         //temp: include the possibility of choosing the fields
         const whatsappInfo = await this.facebookRepository.getWhatsappInfo(userId, ['token', 'token_expires_at', 'waba_id']);
@@ -234,11 +234,18 @@ class FacebookService implements IFacebookService {
         }
 
         const urlParams = new URLSearchParams();
-        urlParams.append('name', templateName);
-        urlParams.append('fields', 'name,id,status,category');
+        urlParams.append('fields', fields);
 
-        const url = `${FacebookUtils.baseUrl()}/${whatsappInfo.waba_id}/message_templates?` + urlParams.toString();
-
+        let url: string = '';
+        if (templateId !== undefined) {
+            url = `${FacebookUtils.baseUrl()}/${templateId}?` + urlParams.toString();
+        } else if (templateName !== undefined) {
+            urlParams.append('name', templateName);
+            url = `${FacebookUtils.baseUrl()}/${whatsappInfo.waba_id}/message_templates?` + urlParams.toString();
+        } else {
+            //TEMP: handle this error
+        }
+        
         const response = await fetch(url, {method: 'GET', headers: FacebookUtils.apiHeader(whatsappInfo.token)});
         const data: any = await response.json();
         
@@ -251,6 +258,15 @@ class FacebookService implements IFacebookService {
         */
 
         return data
+    }
+
+    async getRegisteredWhatsappTemplates(userId: string): Promise<any> {
+        return await this.facebookRepository.getRegisteredWhatsappTemplates(userId);
+    }
+
+    async upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, componentsConfig: string): Promise<any> {
+        //TEMP: should I validate here if the template belongs to the user ?
+        await this.facebookRepository.upsertWhatsappTemplate(userId, templateId, templateName, languageCode, componentsConfig);
     }
 }
 

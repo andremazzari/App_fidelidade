@@ -44,6 +44,7 @@ class FacebookRepository implements IFacebookRepository {
 
     async upsertWhatsappInfo(userId: string, token: string, debugToken: any, wabaInfo: WABAInfo): Promise<void> {
         //If a regsitry for the user already exists, update only the information regarding the token
+        //TEMP: what if the user changes the facebook account ? Should I use fb_user_id as a part of the key ?
         const sql = `
         INSERT INTO ${process.env.MYSQL_DATABASE as string}.user_whatsapp (id, token, token_expires_at, fb_user_id, waba_id, waba_name, phone_id, phone_number, phone_name, phone_verification_status)
         VALUES (UUID_TO_BIN(?, TRUE), ?, FROM_UNIXTIME(?), ?, ?, ?, ?, ?, ?, ?)
@@ -55,8 +56,7 @@ class FacebookRepository implements IFacebookRepository {
         const parameters = [userId, token, debugToken.data.expires_at, debugToken.data.user_id, wabaInfo.wabaId, wabaInfo.wabaName, wabaInfo.phoneId, wabaInfo.phoneNumber, wabaInfo.phoneName, wabaInfo.phoneVerificationStatus];
 
         try {
-            const result = await mysqlClient.insertQuery(sql, parameters);
-            console.log(result)
+            await mysqlClient.insertQuery(sql, parameters);
         } catch (error) {
             throw error
         }
@@ -132,6 +132,46 @@ class FacebookRepository implements IFacebookRepository {
                 //TEMP: handle this error (log)
                 throw new Error('More than one template found')
             }
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async getRegisteredWhatsappTemplates(userId: string): Promise<any> {
+        const sql = `
+        SELECT
+            template_id,
+            template_name,
+            language_code
+        FROM
+            ${process.env.MYSQL_DATABASE as string}.whatsapp_templates
+        WHERE
+            id = UUID_TO_BIN(?, TRUE)
+        `;
+
+        const parameters = [userId];
+
+        try {
+            return await mysqlClient.selectQuery(sql, parameters) as Array<any>;
+        } catch (error) {
+            //TEMP: handle this error
+            throw error
+        }
+    }
+
+    async upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, componentsConfig: string): Promise<any> {
+        const sql = `
+        INSERT INTO ${process.env.MYSQL_DATABASE as string}.whatsapp_templates (id, template_id, template_name, language_code, components_config)
+        VALUES (UUID_TO_BIN(?, TRUE), ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            template_name = VALUES(template_name),
+            components_config = VALUES(components_config)
+        `;
+
+        const parameters = [userId, templateId, templateName, languageCode, componentsConfig]
+
+        try {
+            await mysqlClient.insertQuery(sql, parameters);
         } catch (error) {
             throw error
         }

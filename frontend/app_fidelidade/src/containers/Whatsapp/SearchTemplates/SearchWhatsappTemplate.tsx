@@ -5,29 +5,28 @@ import { useFormState, useFormStatus } from "react-dom";
 
 //internal dependencies
 import { SearchWhatsappTemplateContainer } from "./styled";
-import { SearchWhatsappTemplatesServerAction } from "@/services/ServerActions/Facebook";
+import { searchWhatsappTemplatesServerAction, whatsappTemplateInfo } from "@/services/ServerActions/Facebook";
 import RegisterTemplate from "@/components/buttons/RegisterTemplate/RegisterTemplate";
 
+
+
 interface WhatsappTemplateItemProps {
-    templateName: string
-    templateId: string
-    status: string
-    category: string
+    templateInfo: whatsappTemplateInfo
 }
-function WhatsappTemplateItem({templateName, templateId, status, category}: WhatsappTemplateItemProps) {
+function WhatsappTemplateItem({templateInfo}: WhatsappTemplateItemProps) {
     return (
         <li className="templateItem">
             <div className="templateItemInfo">
                 <div>
-                    <p>{templateName} ({status})</p>
+                    <p>{templateInfo.templateName} ({templateInfo.status})</p>
                 </div>
                 <div>
-                    <p>id: {templateId} - categoria: {category}</p>
+                    <p>id: {templateInfo.templateId} - categoria: {templateInfo.category}</p>
                 </div>
             </div>
 
             <div className="templateItemButtonContainer">
-                <RegisterTemplate/>
+                <RegisterTemplate templateInfo={templateInfo}/>
             </div>
         </li>
     )
@@ -46,11 +45,7 @@ function SearchWhatsappTemplatesFormContent() {
 
 
 export default function SearchWhatsappTemplates() {
-    const [formState, formAction] = useFormState(SearchWhatsappTemplatesServerAction, {message: ''})
-
-    useEffect(() => {
-        console.log(formState)
-    }, [formState])
+    const [formState, formAction] = useFormState(searchWhatsappTemplatesServerAction, {message: ''});
 
     return (
         <SearchWhatsappTemplateContainer>
@@ -59,7 +54,7 @@ export default function SearchWhatsappTemplates() {
             </form>
 
             <ul className="templateList">
-                {formState.templates ? formState.templates.map((template: any) => <WhatsappTemplateItem templateName={template.name} templateId={template.id} status={template.status} category={template.category} />) : ''}
+                {formState.templates ? formState.templates.map((template: any) => <WhatsappTemplateItem templateInfo={template} />) : ''}
             </ul>
         </SearchWhatsappTemplateContainer>
     );

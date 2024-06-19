@@ -9,6 +9,8 @@ const facebookRouter = Router();
 
 const facebookController = FacebookFactory.controller();
 
-facebookRouter.get('/whatsapp/templates/', AuthenticationMiddleware, (req: Request, res: Response) => facebookController.searchWhatsappTemplate(req, res))
+facebookRouter.get('/whatsapp/templates/', AuthenticationMiddleware, (req: Request, res: Response) => facebookController.searchWhatsappTemplate(req, res));
+facebookRouter.get('/whatsapp/templates/registered', AuthenticationMiddleware, (req: Request, res: Response) => facebookController.getRegisteredWhatsappTemplates(req, res));
+facebookRouter.post('/whatsapp/templates/registered', AuthenticationMiddleware, (req: Request, res: Response) => facebookController.upsertWhatsappTemplate(req, res));
 
 export default facebookRouter;

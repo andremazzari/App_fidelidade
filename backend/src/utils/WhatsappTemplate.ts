@@ -24,7 +24,7 @@ class WhatsappTemplate {
         this.templateName = templateInfo.template_name;
 
         //set component config
-        if (templateInfo.components_config != null) {
+        if (templateInfo.components_config && templateInfo.components_config.lenght > 0) {
             this.componentConfig = templateInfo.components_config.map((item: Record<string, any>) => this.prepareComponentConfig(item))
         }
 

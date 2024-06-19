@@ -18,6 +18,36 @@ class FacebookUtils {
     
         return `https://www.facebook.com/${process.env.NEXT_PUBLIC_FACEBOOK_API_VERSION}/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&state=${state}&config_id=${config_id}`;
     }
+
+    static processTemplateComponents(components: Array<any>) {
+        let processedComponents: Array<any> = []
+        const variableRegex = /\{\{\d+\}\}/g;
+        const supportedCmoponents = ['body', 'header',  'footer']
+
+        for (const component of components) {
+            //TEMP: progressively support more types of templates
+            //TEMP: structure better the verification of support
+            if (!supportedCmoponents.includes(component.type.toLowerCase())) {
+                //TEMP: handle this error
+                throw new Error('Template not supported.')
+            }
+
+            let variablesCount = component.text.match(variableRegex);
+            variablesCount = variablesCount ? variablesCount.length : 0;
+
+            if (variablesCount > 0) {
+                const processedComponent = {
+                    type: component.type.toLowerCase(),
+                    text: component.text,
+                    variablesCount: variablesCount
+                }
+    
+                processedComponents.push(processedComponent);
+            }
+        }
+
+        return processedComponents
+    }
 }
 
 export default FacebookUtils

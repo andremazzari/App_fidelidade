@@ -39,7 +39,9 @@ export function isFacebookAPIError(item: any): item is FacebookAPIError {
 //---------------------------------------
 
 export interface IFacebookController {
-    searchWhatsappTemplate(req: Request, res: Response): Promise<Response>;
+    searchWhatsappTemplate(req: Request, res: Response): Promise<Response>
+    getRegisteredWhatsappTemplates(req: Request, res: Response): Promise<Response>
+    upsertWhatsappTemplate(req: Request, res: Response): Promise<Response>
 }
 
 //TEMP: define the return interfaces
@@ -52,7 +54,9 @@ export interface IFacebookService {
     checkWhatsappInfoBeforeDB(token: string, debugToken: any, wabaInfo: WABAInfo): boolean
     sendFidelityWhatsappMessage(userId: string, phone: number, createdAt: string, points: number, target: number): Promise<any>
     checkWhatsappToken(token: string, expiresAt: Date | string): boolean
-    searchWhatsappTemplate(userId: string, templateName: string): Promise<any>
+    searchWhatsappTemplate(userId: string, templateId: string | undefined, templateName: string | undefined, fields: string): Promise<any>
+    getRegisteredWhatsappTemplates(userId: string): Promise<any>
+    upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, componentsConfig: string): Promise<any>
 }
 
 export interface IFacebookRepository {
@@ -61,4 +65,6 @@ export interface IFacebookRepository {
     updateFidelityWhatsappMessageID(userId: string, phone: number, createdAt: string, wamid: string): Promise<void>
     getWhatsappTemplateComponentsConfig(userId: string, templateId: string): Promise<any>
     getWhatsappTemplateInfo(userId: string, templateId: string): Promise<any>
+    getRegisteredWhatsappTemplates(userId: string): Promise<any>
+    upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, componentsConfig: string): Promise<any>
 }

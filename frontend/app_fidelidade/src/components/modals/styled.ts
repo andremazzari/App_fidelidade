@@ -2,7 +2,11 @@
 //external dependencies
 import styled from "styled-components";
 
-export const ModalContainer = styled.div`
+interface ModalContainerProps {
+    width?: string
+    height?: string
+}
+export const ModalContainer = styled.div<ModalContainerProps>`
     position: fixed;
     top: 0;
     left: 0;
@@ -15,8 +19,8 @@ export const ModalContainer = styled.div`
     z-index: 1000; /* Ensures the overlay is above other content */
 
     & .modal-content {
-        width: 400px;
-        height: 250px;
+        width: ${(props) => props.width ? props.width : '400px'};
+        height: ${(props) => props.height ? props.height : '250px'};
         background: white;
         padding: 80px 10px;
         border-radius: 4px;
