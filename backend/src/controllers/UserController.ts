@@ -7,6 +7,7 @@ import { UserGetByIdSchema,
          UserVerifyEmail,
         UserLoginSchema,
         UserWhatsappLogin} from "../schemas/UserSchema";
+import UserSchemas from "../schemas/UserSchema";
 import { IUserController, IUserService } from "../models/User";
 
 class UserController implements IUserController {
@@ -17,7 +18,8 @@ class UserController implements IUserController {
         const id_user = req.params.id_user;
 
         try {
-            await UserGetByIdSchema.validate({id_user});
+            await UserSchemas.getById().validate({id_user});
+            //await UserGetByIdSchema.validate({id_user});
         } catch (error) {
             return res.status(400).json({error});
         }
@@ -34,7 +36,8 @@ class UserController implements IUserController {
         const user_info = req.body;
 
         try {
-            await UserAddSchema.validate({user_info}); 
+            await UserSchemas.createUser().validate({user_info});
+            //await UserAddSchema.validate({user_info}); 
         } catch(error) {
             return res.status(400).json({error});
         }
@@ -52,7 +55,8 @@ class UserController implements IUserController {
         const verificationToken = req.body.verificationToken;
 
         try {
-            await UserVerifyEmail.validate({verificationToken});
+            await UserSchemas.verifyEmail().validate({verificationToken});
+            //await UserVerifyEmail.validate({verificationToken});
         } catch (error) {
             return res.status(400).json({error});
         }
@@ -71,7 +75,8 @@ class UserController implements IUserController {
         const password = req.body.password;
 
         try {
-            await UserLoginSchema.validate({email, password});
+            await UserSchemas.login().validate({email, password});
+            //await UserLoginSchema.validate({email, password});
         } catch(error) {
             return res.status(400).json({error});
         }
@@ -93,7 +98,8 @@ class UserController implements IUserController {
         const code = req.body.code;
 
         try {
-            await UserWhatsappLogin.validate({userId, code});
+            await UserSchemas.whatsappLogin().validate({userId, code});
+            //await UserWhatsappLogin.validate({userId, code});
         } catch(error) {
             return res.status(400).json({error});
         }

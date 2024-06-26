@@ -3,6 +3,7 @@ import {IFacebookController, IFacebookService, IFacebookRepository } from "../mo
 import FacebookController from "../controllers/FacebookController"
 import FacebookService from "../services/FacebookService"
 import FacebookRepository from "../repositories/FacebookRepository"
+import FidelityFactory from "./FidelityFactory"
 
 class FacebookFactory {
     static controller(): IFacebookController {
@@ -13,7 +14,8 @@ class FacebookFactory {
 
     static service(): IFacebookService {
         return new FacebookService (
-            this.repository()
+            this.repository(),
+            FidelityFactory.repository()
         )
     }
 

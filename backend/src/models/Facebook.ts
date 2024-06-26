@@ -40,6 +40,7 @@ export function isFacebookAPIError(item: any): item is FacebookAPIError {
 
 export interface IFacebookController {
     searchWhatsappTemplate(req: Request, res: Response): Promise<Response>
+    createWhatsappTemplate(req: Request, res: Response): Promise<Response>
     getRegisteredWhatsappTemplates(req: Request, res: Response): Promise<Response>
     upsertWhatsappTemplate(req: Request, res: Response): Promise<Response>
 }
@@ -55,8 +56,9 @@ export interface IFacebookService {
     sendFidelityWhatsappMessage(userId: string, phone: number, createdAt: string, points: number, target: number): Promise<any>
     checkWhatsappToken(token: string, expiresAt: Date | string): boolean
     searchWhatsappTemplate(userId: string, templateId: string | undefined, templateName: string | undefined, fields: string): Promise<any>
+    createWhatsappTemplate(userId: string, templateName: string, templateCategory: string, components: Array<any>): Promise<any>
     getRegisteredWhatsappTemplates(userId: string): Promise<any>
-    upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, componentsConfig: string): Promise<any>
+    upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, templateStatus: string, templateCategory: string, componentsConfig: string): Promise<any>
 }
 
 export interface IFacebookRepository {
@@ -66,5 +68,5 @@ export interface IFacebookRepository {
     getWhatsappTemplateComponentsConfig(userId: string, templateId: string): Promise<any>
     getWhatsappTemplateInfo(userId: string, templateId: string): Promise<any>
     getRegisteredWhatsappTemplates(userId: string): Promise<any>
-    upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, componentsConfig: string): Promise<any>
+    upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, templateStatus: string, templateCategory: string, componentsConfig: string): Promise<any>
 }

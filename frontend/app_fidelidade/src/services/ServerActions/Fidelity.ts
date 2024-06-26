@@ -6,11 +6,11 @@ import { revalidateTag } from "next/cache"
 import RequestsUtils, { sendProps } from "@/utils/RequestUtils"
 
 export interface FidelityFormStateProps {
-    success: boolean
+    success: boolean | null
     message: string
 }
 
-export async function RegisterFidelity(prevState: FidelityFormStateProps, formData: FormData) {
+export async function RegisterFidelity(prevState: FidelityFormStateProps, formData: FormData): Promise<FidelityFormStateProps> {
     try {
         const phone = formData.get('phone') as string;
         
@@ -59,21 +59,29 @@ export async function updateFidelityConfig(prevState: UpdateFidelityConfigFormPr
         whatsappMessageEnabled = false
     }
 
+    const config = {
+        target,
+        whatsapp_message_enabled: whatsappMessageEnabled
+    }
+
     if (!validationResult.error) {
         const options: sendProps = {
             method: 'PUT',
             url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/fidelity/config`,
-            body: {target, whatsappMessageEnabled},
+            body: {config: JSON.stringify(config)},
             contentType: 'form-urlencoded',
             cache: 'no-store',
             setAuthHeader: true
         }
-        
-        const response = await RequestsUtils.send(options);
+        try {
+            const response = await RequestsUtils.send(options);
 
-        if (response.status == 204) {
-            return {success: true, message:'Dados atualizados com sucesso.'};
-        } else {
+            if (response.status == 204) {
+                return {success: true, message:'Dados atualizados com sucesso.'};
+            } else {
+                return {success: false, message: 'Erro para atualizar os dados.'}
+            }
+        } catch {
             return {success: false, message: 'Erro para atualizar os dados.'}
         }
     } else {

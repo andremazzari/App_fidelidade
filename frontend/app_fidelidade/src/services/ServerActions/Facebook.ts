@@ -2,6 +2,7 @@
 //internal dependencies
 import RequestsUtils, {sendProps} from "@/utils/RequestUtils";
 import FacebookUtils from "@/utils/FacebookUtils";
+import { text } from "stream/consumers";
 
 //TEMP: Is there a better file to define this ?
 export interface whatsappTemplateInfo {
@@ -134,14 +135,14 @@ export async function registerComponentsConfig(prevState: registerComponentsConf
                 
                 switch (variableValueType) {
                     case 'points':
-                        variableConfig.text = '*{{points}}*'
+                        variableConfig.text = '{{points}}'
                         break;
                     case 'target':
-                        variableConfig.text = '*{{target}}*'
+                        variableConfig.text = '{{target}}'
                         break;
                     case 'text':
                         const variableText = formData.get(`component${componentNumber}Variable${variableNumber}Text`) as string;
-                        if (variableText == '*{{points}}*' || variableText == '*{{target}}*') {
+                        if (variableText == '{{points}}' || variableText == '{{target}}') {
                             //TEMP: return some error
                         }
 
@@ -163,6 +164,8 @@ export async function registerComponentsConfig(prevState: registerComponentsConf
         templateId: formData.get('templateId') as string,
         templateName: formData.get('templateName') as string,
         templateLanguage: formData.get('templateLanguage') as string,
+        templateStatus: formData.get('templateStatus') as string,
+        templateCategory: formData.get('templateCategory') as string,
         componentsConfig: JSON.stringify(componentsConfig)
     }
 
@@ -188,4 +191,95 @@ export async function registerComponentsConfig(prevState: registerComponentsConf
         //TEMP: handle this error
         return {success: false}
     }
+}
+
+export interface setSelectedWhatsappTemplateProps {
+    success: boolean | null
+    message: string
+    templateId?: string
+}
+export async function setSelectedWhatsappTemplate(prevState: setSelectedWhatsappTemplateProps, formData: FormData): Promise<setSelectedWhatsappTemplateProps> {
+    const selectedTemplateId = formData.get('selectedTemplate') as string;
+
+    if (selectedTemplateId == '') {
+        return {success: false, message: 'Selecione um template.'}
+    }
+
+    const config = {
+        whatsapp_template_id: selectedTemplateId
+    }
+
+    const options: sendProps = {
+        method: 'PUT',
+        url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/fidelity/config`,
+        body: {config: JSON.stringify(config)},
+        contentType: 'form-urlencoded',
+        cache: 'no-store',
+        setAuthHeader: true
+    }
+    
+    const response = await RequestsUtils.send(options);
+
+    if (response.status == 204) {
+        return {success: true, message:'Template atualizado com sucesso.'};
+    } else {
+        console.log(response)
+        return {success: false, message: 'Erro para atualizar template.'}
+    }
+}
+
+export interface createWhatsappTemplateProps {
+    success: boolean | null
+    message: string
+}
+export async function createWhatsappTemplate(prevState: createWhatsappTemplateProps, formData: FormData): Promise<createWhatsappTemplateProps> {
+    //TEMP: validate the input to verify if there are no variables {{n}} in it.
+    //TEMP: support more types of components
+    const components: Array<any> = []
+
+    if (formData.get('templateHeaderType') == 'Text') {
+        components.push({
+            type: 'HEADER',
+            format: 'TEXT',
+            text: formData.get('templateHeaderContent')
+        })
+    }
+
+    components.push(
+        {
+            type: 'BODY',
+            text: formData.get('templateContent')
+        }
+    )
+
+    const body = {
+        templateName: formData.get('templateName'),
+        templateCategory: formData.get('templateCategory'),
+        components: JSON.stringify(components)
+    }
+
+    const options: sendProps = {
+        method: 'POST',
+        url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/whatsapp/templates`,
+        contentType: 'form-urlencoded',
+        body,
+        cache: 'no-store',
+        setAuthHeader: true
+    }
+
+    try {
+        const response = await RequestsUtils.send(options);
+        console.log(response)
+        if (response.status != 200) {
+            //TEMP: handle this error
+            return {success: false, message: 'Erro ao criar template.'}
+        }
+
+        return {success: true, message: 'Template criado com sucesso.'}
+    } catch(error) {
+        //TEMP: handle this error
+        console.log(error)
+        return {success: false, message: 'Erro ao criar template.'}
+    }
+    
 }

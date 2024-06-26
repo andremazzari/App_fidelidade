@@ -3,13 +3,15 @@ import { Request, Response, NextFunction } from "express";
 
 //internal dependencies
 import { AuthenticationTokenSchema } from "../schemas/AuthenticationSchema";
+import AuthenticationSchemas from "../schemas/AuthenticationSchema";
 import Utils from "../utils/Utils";
 
 export async function AuthenticationMiddleware(req: Request, res: Response, next: NextFunction) {
     const {authorization} = req.headers;
     
     try {
-        await AuthenticationTokenSchema.validate({authorization});
+        await AuthenticationSchemas.token().validate({authorization});
+        //await AuthenticationTokenSchema.validate({authorization});
 
         const token = authorization!.split(' ')[1];
 

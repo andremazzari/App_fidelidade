@@ -6,7 +6,7 @@ type contentTypesOptions = 'json' | 'form-urlencoded';
 type cacheOptions = 'force-cache' | 'no-store';
 type revalidateOptions = number | 0 | false;
 type tagsOptions = string[];
-type bodyType = Record<string, string | number | boolean | null>;
+type bodyType = Record<string, any>;
 type credentialsOptions = 'omit' | 'include';
 
 type fetchOptions = {

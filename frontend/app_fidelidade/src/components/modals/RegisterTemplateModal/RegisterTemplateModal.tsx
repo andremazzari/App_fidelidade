@@ -78,6 +78,8 @@ function RegisterTemplateModalFormContent({templateInfo, templateComponents}: Re
             <input type="hidden" name='templateId' value={templateInfo.templateId}/>
             <input type="hidden" name='templateName' value={templateInfo.templateName}/>
             <input type="hidden" name='templateLanguage' value={templateInfo.language}/>
+            <input type="hidden" name='templateStatus' value={templateInfo.status}/>
+            <input type="hidden" name="templateCategory" value={templateInfo.category}/>
             <input type="hidden" name='componentsCount' value={templateComponents.length}/>
             <button disabled={pending}>Registar template</button>
         </div>

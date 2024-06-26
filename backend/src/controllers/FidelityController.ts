@@ -3,8 +3,9 @@ import { Request, Response } from "express";
 
 
 //internal dependencies
-import { IFidelityController, IFidelityService } from "../models/Fidelity";
+import { IFidelityController, IFidelityService, FidelityConfig } from "../models/Fidelity";
 import { RegisterFidelitySchema, GetRecordsSchema, GetRecordsCountPagesSchema, UpdateFidelityConfigSchema, GetFidelityConfigSchema, GetFidelityInfoSchema, RedeemFidelitySchema, GetRedeemRecordsSchema, DeleteFidelitySchema } from "../schemas/FidelitySchema";
+import FidelitySchemas from "../schemas/FidelitySchema";
 import Utils from "../utils/Utils";
 
 class FidelityController implements IFidelityController {
@@ -15,7 +16,8 @@ class FidelityController implements IFidelityController {
         const {phone, userId} = req.body;
 
         try {
-            await RegisterFidelitySchema.validate({phone, userId});
+            await FidelitySchemas.registerFidelity().validate({phone, userId});
+            //await RegisterFidelitySchema.validate({phone, userId});
         } catch (error) {
             return res.status(400).json({error});
         }
@@ -42,7 +44,8 @@ class FidelityController implements IFidelityController {
         const includeCanceled = Utils.StringToBoolean(req.query.includeCanceled as string | undefined);
 
         try {
-            await GetRecordsSchema.validate({userId, pageNumber, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
+            await FidelitySchemas.getRecords().validate({userId, pageNumber, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
+            //await GetRecordsSchema.validate({userId, pageNumber, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
         } catch (error) {
             return res.status(400).json({error});
         }
@@ -65,7 +68,8 @@ class FidelityController implements IFidelityController {
         const timestamp = req.body.timestamp;
         
         try {
-            await DeleteFidelitySchema.validate({userId, phone, timestamp});
+            await FidelitySchemas.deleteFidelity().validate({userId, phone, timestamp});
+            //await DeleteFidelitySchema.validate({userId, phone, timestamp});
         } catch (error) {
             return res.status(400).json({error});
         }
@@ -92,7 +96,8 @@ class FidelityController implements IFidelityController {
         const includeCanceled = Utils.StringToBoolean(req.query.includeCanceled as string | undefined);
 
         try {
-            await GetRecordsCountPagesSchema.validate({userId, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
+            await FidelitySchemas.getRecordsCountPages().validate({userId, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
+            //await GetRecordsCountPagesSchema.validate({userId, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
         } catch (error) {
             return res.status(400).json({error});
         }
@@ -114,7 +119,8 @@ class FidelityController implements IFidelityController {
         const phone = req.query.phone as string;
 
         try {
-            await GetFidelityInfoSchema.validate({userId, phone});
+            await FidelitySchemas.getFidelityInfo().validate({userId, phone});
+            //await GetFidelityInfoSchema.validate({userId, phone});
         } catch (error) {
             return res.status(400).json({error});
         }
@@ -134,7 +140,8 @@ class FidelityController implements IFidelityController {
         const userId = req.body.userId;
 
         try {
-            await GetFidelityConfigSchema.validate({userId});
+            await FidelitySchemas.getFidelityConfig().validate({userId});
+            //await GetFidelityConfigSchema.validate({userId});
         } catch (error) {
             return res.status(400).json({error});
         }
@@ -153,17 +160,19 @@ class FidelityController implements IFidelityController {
     async updateFidelityConfig(req: Request, res: Response): Promise<Response> {
         //TEMP: in the future, use the id of the store.
         const userId = req.body.userId;
-        const target = req.body.target;
-        const whatsappMessageEnabled = Utils.StringToBoolean(req.body.whatsappMessageEnabled as string | undefined);
-
+        //const target = req.body.target;
+        //const whatsappMessageEnabled = Utils.StringToBoolean(req.body.whatsappMessageEnabled as string | undefined);
+        const config = Utils.parseJSONString(req.body.config) as FidelityConfig;
+        
         try {
-            await UpdateFidelityConfigSchema.validate({userId, target, whatsappMessageEnabled});
+            await FidelitySchemas.updateFidelityConfig().validate({userId, config});
+            //await UpdateFidelityConfigSchema.validate({userId, config});
         } catch (error) {
             return res.status(400).json({error});
         }
         
         try {
-            await this.fidelityService.updateFidelityConfig(userId, target, whatsappMessageEnabled!);
+            await this.fidelityService.updateFidelityConfig(userId, config);
 
             return res.status(204).json({});
         } catch (error) {
@@ -178,7 +187,8 @@ class FidelityController implements IFidelityController {
         const phone = req.body.phone as string;
 
         try {
-            await RedeemFidelitySchema.validate({userId, phone});
+            await FidelitySchemas.redeemFidelity().validate({userId, phone});
+            //await RedeemFidelitySchema.validate({userId, phone});
         } catch (error) {
             return res.status(400).json({error});
         }
@@ -205,7 +215,8 @@ class FidelityController implements IFidelityController {
         const endDate = req.query.endDate as string;
 
         try {
-            await GetRedeemRecordsSchema.validate({userId, pageNumber, pageSize, phone, initialDate, endDate});
+            await FidelitySchemas.getRedeemRecords().validate({userId, pageNumber, pageSize, phone, initialDate, endDate});
+            //await GetRedeemRecordsSchema.validate({userId, pageNumber, pageSize, phone, initialDate, endDate});
         } catch (error) {
             return res.status(400).json({error});
         }

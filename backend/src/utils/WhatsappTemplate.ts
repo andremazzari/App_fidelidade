@@ -22,12 +22,12 @@ class WhatsappTemplate {
 
         //set template name
         this.templateName = templateInfo.template_name;
-
+        
         //set component config
-        if (templateInfo.components_config && templateInfo.components_config.lenght > 0) {
+        if (templateInfo.components_config && templateInfo.components_config.length > 0) {
             this.componentConfig = templateInfo.components_config.map((item: Record<string, any>) => this.prepareComponentConfig(item))
         }
-
+        
         //set language code
         this.languageCode = templateInfo.language_code;
     }
@@ -38,10 +38,10 @@ class WhatsappTemplate {
             const parameters = item.parameters.map((parameter: any) => {
                 if (parameter.type == 'text') {
                     switch (parameter.text) {
-                        case '*{{points}}*':
+                        case '{{points}}':
                             parameter.text = this.points.toString();
                             break;
-                        case '*{{target}}*':
+                        case '{{target}}':
                             parameter.text = this.target.toString();
                             break;
                     }

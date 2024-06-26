@@ -159,16 +159,18 @@ class FacebookRepository implements IFacebookRepository {
         }
     }
 
-    async upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, componentsConfig: string): Promise<any> {
+    async upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, templateStatus: string, templateCategory: string, componentsConfig: string): Promise<any> {
         const sql = `
-        INSERT INTO ${process.env.MYSQL_DATABASE as string}.whatsapp_templates (id, template_id, template_name, language_code, components_config)
-        VALUES (UUID_TO_BIN(?, TRUE), ?, ?, ?, ?)
+        INSERT INTO ${process.env.MYSQL_DATABASE as string}.whatsapp_templates (id, template_id, template_name, language_code, template_status, template_category, components_config)
+        VALUES (UUID_TO_BIN(?, TRUE), ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
             template_name = VALUES(template_name),
+            template_status = VALUES(template_status),
+            template_category = VALUES(template_category),
             components_config = VALUES(components_config)
         `;
 
-        const parameters = [userId, templateId, templateName, languageCode, componentsConfig]
+        const parameters = [userId, templateId, templateName, languageCode, templateStatus, templateCategory, componentsConfig]
 
         try {
             await mysqlClient.insertQuery(sql, parameters);

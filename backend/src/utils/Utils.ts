@@ -51,9 +51,13 @@ class Utils {
         return jwt.decode(token, {json: true, complete: complete}) as Record<string, unknown>;
     }
 
-    static StringToBoolean(param: string | undefined): boolean | undefined {
+    static StringToBoolean(param: string | boolean | undefined): boolean | undefined {
         if (param === undefined) {
             return undefined;
+        }
+
+        if (param === true || param == false) {
+            return param
         }
 
         if (param === 'true' || param === 'True' || param === '1') {
@@ -92,6 +96,14 @@ class Utils {
         }
         
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+
+    static parseJSONString(jsonString: string) {
+        try {
+            return JSON.parse(jsonString)
+        } catch {
+            return null
+        }
     }
 }
 

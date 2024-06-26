@@ -41,9 +41,11 @@ function FidelityConfigFormContent({formState, config}: FidelityConfigFormConten
     )
 }
 
+//TEMP: is there a better place to define this ?
 export interface configFields {
     target: string
     whatsappMessageEnabled: boolean
+    whatsappTemplateId: string
 }
 
 interface FidelityConfigProps {

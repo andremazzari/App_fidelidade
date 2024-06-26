@@ -1,5 +1,5 @@
 //internal dependencies
-import { IFidelityRepository } from "../models/Fidelity";
+import { IFidelityRepository, FidelityConfig } from "../models/Fidelity";
 import { mysqlClient } from "../connectors/MySQL";
 import { ResultSetHeader } from "mysql2";
 import Utils from "../utils/Utils";
@@ -225,11 +225,16 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
 
-    async getFidelityConfig(userId: string): Promise<any> {
+    async getFidelityConfig(userId: string, fields?: string): Promise<any> {
+        //TEMP: if fields is included in the route, validate againts invalid input and sql injection
+        let columns = '*'
+        if (fields) {
+            columns = fields
+        }
+        
         const sql = `
         SELECT
-            target,
-            whatsapp_message_enabled
+            ${columns}
         FROM
             ${process.env.MYSQL_DATABASE as string}.fidelity_config
         WHERE
@@ -254,15 +259,31 @@ class FidelityRepository implements IFidelityRepository {
         }        
     }
 
-    async updateFidelityConfig(userId: string, target: number, whatsappMessageEnabled: boolean): Promise<boolean> {
+    async updateFidelityConfig(userId: string, config: FidelityConfig): Promise<boolean> {
         //TEMP: use the id of the store
+        let updateStatement = '';
+        const parameters: Array<any> = [];
+        for (const key of Object.keys(config)) {
+            if (config[key as keyof FidelityConfig] != undefined) {
+                if  (updateStatement == '') {
+                    updateStatement = `${key} = ?`;
+                } else {
+                    updateStatement += `, ${key} = ?`;
+                }
+                parameters.push(config[key as keyof FidelityConfig]);
+            }
+        }
+
+        if (updateStatement == '' || parameters.length == 0) {
+            throw new Error('No fields to update in config.')
+        }
+
         const sql = `
         UPDATE ${process.env.MYSQL_DATABASE as string}.fidelity_config
-        SET target = ?, whatsapp_message_enabled = ?
+        SET ${updateStatement}
         WHERE id = UUID_TO_BIN(?, TRUE) 
         `;
-
-        const parameters = [target, whatsappMessageEnabled, userId];
+        parameters.push(userId)
         try {
             const result = await mysqlClient.updateQuery(sql, parameters) as ResultSetHeader;
             if (result.affectedRows == 1) {

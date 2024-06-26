@@ -1,6 +1,6 @@
 //internal dependencies
 import { json } from "stream/consumers";
-import { IFidelityService, IFidelityRepository, FidelityInfo } from "../models/Fidelity";
+import { IFidelityService, IFidelityRepository, FidelityInfo, FidelityConfig } from "../models/Fidelity";
 import { IFacebookService } from "../models/Facebook";
 
 class FidelityService implements IFidelityService {
@@ -98,9 +98,9 @@ class FidelityService implements IFidelityService {
         } 
     }
 
-    async updateFidelityConfig(userId: string, target: number, whatsappMessageEnabled: boolean): Promise<boolean> {
+    async updateFidelityConfig(userId: string, config: FidelityConfig): Promise<boolean> {
         try {
-            return await this.fidelityRepository.updateFidelityConfig(userId, target, whatsappMessageEnabled);
+            return await this.fidelityRepository.updateFidelityConfig(userId, config);
         } catch (error) {
             throw error
         } 
