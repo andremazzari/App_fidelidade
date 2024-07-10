@@ -21,6 +21,6 @@ export const FormContainer = styled.div`
     border: 1px solid black;
     border-radius: 10px;
     max-width: 300px;
-    width: 250px;
-    height: 150px;
+    width: 300px;
+    height: 200px;
 `;

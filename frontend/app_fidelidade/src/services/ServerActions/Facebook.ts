@@ -62,7 +62,7 @@ export async function searchWhatsappTemplatesServerAction(prevState: SearchWhats
 
         return {message: '', templates: templatesInfo, paging}
     } catch(error) {
-        //TEMP: handle this error
+        //TEMP: handle this error. Return message to the front instead of throwing error
         throw new Error('Error in search whatsapp template request: ' + error);
     }
 }
@@ -206,7 +206,7 @@ export async function setSelectedWhatsappTemplate(prevState: setSelectedWhatsapp
     }
 
     const config = {
-        whatsapp_template_id: selectedTemplateId
+        whatsappTemplateId: selectedTemplateId
     }
 
     const options: sendProps = {

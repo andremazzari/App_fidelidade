@@ -14,7 +14,9 @@ export default async function middleware(request: NextRequest) {
         '/',
         '/login',
         '/verifyEmail',
-        '/fbOauth'
+        '/fbOauth',
+        '/forgotPassword',
+        '/resetPassword'
     ]
 
     let deleteToken = false;

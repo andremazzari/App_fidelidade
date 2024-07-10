@@ -75,10 +75,20 @@ class Utils {
         return obj.constructor === Object && Object.keys(obj).length === 0;
     }
 
-    static currentTimestampToMySQL(milliSeconds = 0) {
+    static isRecordObject(item: any): item is Record<string, any> {
+        return item !== null && typeof item === 'object' && !Array.isArray(item);
+    }
+
+    static isString(value: any): value is string {
+        return typeof value === 'string';
+    }
+
+    static timestampToMySQL(milliSeconds = 0, date: Date | null =  null) {
         //TEMP: update this to use the moment-timezone library
         // Parse the input timestamp to a Date object
-        const date = new Date();
+        if (date == null) {
+            date = new Date();
+        }
         
         // Extract the individual components
         const year = date.getFullYear();
@@ -98,12 +108,27 @@ class Utils {
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }
 
-    static parseJSONString(jsonString: string) {
+    static parseJSONString(jsonString: string | null) {
+        if (jsonString == null) {
+            return null
+        }
+
         try {
             return JSON.parse(jsonString)
         } catch {
             return null
         }
+    }
+
+    static parseJSONorString(value: string | null) {
+        //If string corresponds to a json, return parsed json. Else, return the string (or null).
+        let parsedValue = this.parseJSONString(value);
+
+        if (parsedValue == null && this.isString(value)) {
+            return value
+        }
+
+        return parsedValue;
     }
 }
 

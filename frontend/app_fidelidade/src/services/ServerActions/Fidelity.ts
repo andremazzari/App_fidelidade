@@ -8,16 +8,22 @@ import RequestsUtils, { sendProps } from "@/utils/RequestUtils"
 export interface FidelityFormStateProps {
     success: boolean | null
     message: string
+    changeIndicator: boolean
 }
 
 export async function RegisterFidelity(prevState: FidelityFormStateProps, formData: FormData): Promise<FidelityFormStateProps> {
     try {
         const phone = formData.get('phone') as string;
+        const points = formData.get('points') as string;
+
+        if (points == '') {
+            return {success: false, message:'Preencha a quantidadde de pontos.', changeIndicator: !prevState.changeIndicator};
+        }
         
         const options: sendProps = {
             method: 'POST',
             url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/fidelity`,
-            body: {phone},
+            body: {phone, points},
             contentType: 'form-urlencoded',
             cache: 'no-store',
             setAuthHeader: true
@@ -27,18 +33,18 @@ export async function RegisterFidelity(prevState: FidelityFormStateProps, formDa
 
         if (response.status != 201) {
             //TEMP: treat types of errors
-            return {success: false, message: 'Erro ao cadastrar fidelidade.'}
+            return {success: false, message: 'Erro ao cadastrar fidelidade.', changeIndicator: !prevState.changeIndicator}
         } else {
             //Revalidate data in history table
             revalidateTag('registerPageRecordHistory');
-            return {success: true, message: 'Fidelidade registrada com sucesso.'}
+            return {success: true, message: 'Fidelidade registrada com sucesso.', changeIndicator: !prevState.changeIndicator}
         }
     } catch (error) {
         if (process.env.ENV == 'DEV') {
             console.log('Error at RegisterFildeity:');
             console.log(error);
         }
-        return {success: false, message:'Erro ao cadastrar fidelidade.'};
+        return {success: false, message:'Erro ao cadastrar fidelidade.', changeIndicator: !prevState.changeIndicator};
     }
 }
 
@@ -61,7 +67,7 @@ export async function updateFidelityConfig(prevState: UpdateFidelityConfigFormPr
 
     const config = {
         target,
-        whatsapp_message_enabled: whatsappMessageEnabled
+        whatsappMessageEnabled
     }
 
     if (!validationResult.error) {

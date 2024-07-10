@@ -27,7 +27,7 @@ const templateComponentConfig = object({
 //-------------------------------------
 
 export const SearchWhatsappTemplateSchema = object({
-    userId: string().required().uuid(),
+    companyId: string().required().uuid(),
     templateId: string(),
     templateName: string(),
     fields: string().required()
@@ -107,7 +107,7 @@ class FacebookSchemas {
 
     static searchWhatsappTemplate() {
         return object({
-            userId: string().required().uuid(),
+            companyId: string().required().uuid(),
             templateId: string(),
             templateName: string(),
             fields: string().required()
@@ -118,7 +118,7 @@ class FacebookSchemas {
 
     static createWhatsappTemplate() {
         return object({
-            userId: string().required().uuid(),
+            companyId: string().required().uuid(),
             templateName: string().required().test('Invalid-template-name', 'Template name can only contain lower case letters, digits and underscores', (name) => {
                 const regex = /^[a-z0-9_]+$/;
                 return regex.test(name);
@@ -150,13 +150,13 @@ class FacebookSchemas {
 
     static getRegisteredWhatsappTemplates() {
         return object({
-            userId: string().required().uuid()
+            companyId: string().required().uuid()
         }).noUnknown().strict()
     }
 
     static upsertWhatsappTemplate() {
         return object({
-            userId: string().required().uuid(),
+            companyId: string().required().uuid(),
             templateId: string().required(),
             templateName: string().required(),
             languageCode: string().required(),

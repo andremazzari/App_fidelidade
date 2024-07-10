@@ -5,61 +5,64 @@ import {v4 as uuidv4} from 'uuid';
 import { User, LoginResult, IUserService, IUserRepository } from "../models/User";
 import { IFidelityRepository } from '../models/Fidelity';
 import Utils from '../utils/Utils';
+import AuthService from './AuthService';
 import EmailService from './EmailService';
 import { IFacebookService, IFacebookRepository, isFacebookAPIError } from '../models/Facebook';
+import { mysqlClient } from "../connectors/MySQL";
 
 class UserService implements IUserService {
     constructor(
         private userRepository: IUserRepository,
+        private authService: AuthService,
         private emailService: EmailService,
         private facebookService: IFacebookService,
         private fidelityRepository: IFidelityRepository,
         private facebookRepository: IFacebookRepository
     ) {}
 
-    async getById(id_user: string): Promise<User | {}> {
-        return await this.userRepository.getById(id_user);
+    async getById(userId: string, companyId: string): Promise<User | {}> {
+        return await this.userRepository.getById(userId, companyId);
     }
 
-    createSessionTokens(id_user: string, authenticated: boolean): LoginResult {
-        //TEMP: Shoudl this function be here or in Utils ?
-        //TEMP: include the id of the user and the id of the store.
-        let result: LoginResult = {
-            authenticated
-        }
-
-        if (result.authenticated) {
-            const payload = {
-                id: id_user
-            }
-            result.token = Utils.generateJWT(payload, process.env.ACCESS_TOKEN_EXPIRES_IN as string);
-            result.refreshToken = Utils.generateJWT(payload, process.env.REFRESH_TOKEN_EXPIRES_IN as string);
-        }
-        
-        return result;
-    }
-
-    async createUser(body: User): Promise<LoginResult> {
+    async signUp(userInfo: User): Promise<LoginResult> {
         try {
-            //create user id
-            body.id_user = uuidv4();
+            //start transaction
+            //TEMP: validate if the transaction implmentaion is rgith (specially when change to pools).
+            await mysqlClient.startTransaction();
+            //create company
+            const companyId = uuidv4();
+            await this.userRepository.createCompany(companyId);
+            
+            //create default fidelity config
+            this.fidelityRepository.createFidelityConfig(companyId);
+
+            //create user
+            userInfo.userId = uuidv4();
+            userInfo.companyId = companyId;
+            //User type: Owner
+            userInfo.type = 'O';
 
             //encrypt user password
-            if (body.password != null) {
-                body.password = await Utils.encryptPassword(body.password);
+            if (userInfo.password != null) {
+                userInfo.password = await Utils.encryptPassword(userInfo.password);
             }
             
-            //include in the database
-            const id_user = await this.userRepository.createUser(body);
+            //create owner user in the database
+            await this.userRepository.createUser(userInfo);
+            await mysqlClient.commit();
+        } catch (error) {
+            console.log('Erro na transação: ', error)
+            await mysqlClient.rollback();
+            //TEMP: validate the types of errors that can be returned in each step
+            throw error;
+        }
 
-            //create default fidelity config
-            this.fidelityRepository.createFidelityConfig(id_user);
-
+        try {
             //Create session token
-            const result = this.createSessionTokens(id_user, true);
+            const result = this.authService.createSession(userInfo.companyId, userInfo.userId);
 
             //send email verification
-            this.emailService.sendVerificationEmail(body.id_user, body.email, body.name);
+            await this.emailService.sendVerificationEmail(userInfo.companyId, userInfo.userId, userInfo.email, userInfo.name);
 
             return result;
         } catch (error) {
@@ -76,11 +79,9 @@ class UserService implements IUserService {
                 return {status: 401, json: {error: 'Invalid token'}};
             }
             const tokenInfo = Utils.decodeJWT(verificationToken);
-            const userId =  tokenInfo.id as string;
-            const email = tokenInfo.email as string
-
-            const result = await this.userRepository.verifyEmail(userId, email);
-
+            
+            const result = await this.userRepository.verifyEmail(tokenInfo.id as string, tokenInfo.userId as string);
+            
             if (!result) {
                 return {status: 404, json: {error: 'Invalid token'}};
             }
@@ -91,23 +92,69 @@ class UserService implements IUserService {
         }
     }
 
+    async forgotPassword(email: string): Promise<boolean> {
+        try {
+            const userId = await this.userRepository.verifyUserByEmail(email);
+
+            if (userId == null) {
+                return false;
+            }
+
+            const token = uuidv4();
+            const expiresAt = Utils.timestampToMySQL(0, new Date(Date.now() + 3600000)); // Token expires in 1 hour
+            //register forgot password request in the database
+            await this.userRepository.forgotPassword(userId, token, expiresAt);
+
+            //send reset password email
+            await this.emailService.sendResetPasswordEmail(userId, token, email);
+
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    async resetPassword(userId: string, token: string, password: string): Promise<boolean> {
+        try {
+            //check if token is valid
+            const tokenInfo = await this.userRepository.getLastResetPasswordTokenInfo(userId);
+
+            const expireTimestamp = new Date(tokenInfo.expiresAt);
+            const currentTimestamp = new Date();
+
+            if (Utils.isEmptyObject(tokenInfo) || expireTimestamp < currentTimestamp || token != tokenInfo.token || tokenInfo.usedAt != null) {
+                //invalid reset password request
+                return false;
+            }
+
+            //change password in the database
+            const encryptedPassword = await Utils.encryptPassword(password)
+
+            await this.userRepository.resetPassword(userId, token, encryptedPassword);
+
+            return true
+        } catch (error) {
+            return false
+        }
+    }
+
     async login(email: string, password: string): Promise<LoginResult> {
-        const {password_hash, id_user} = await this.userRepository.login(email);
+        const {companyId, userId, passwordHash} = await this.userRepository.login(email);
 
         let result: LoginResult = {
             authenticated: false
         }
 
-        if (password_hash && id_user) {
-            result.authenticated = await Utils.comparePasswords(password, password_hash);
+        if (passwordHash && userId && companyId) {
+            result.authenticated = await Utils.comparePasswords(password, passwordHash);
 
-            result = this.createSessionTokens(id_user, result.authenticated)
+            result = await this.authService.createSession(companyId, userId);
         }
         
         return result;
     }
 
-    async whatsappLogin(userId: string, code: string): Promise<any> {
+    async whatsappLogin(companyId: string, code: string): Promise<any> {
         //TEMP: create an interface and codes to handle each error
         const tokenData = await this.facebookService.getAccessToken(code);
 
@@ -153,7 +200,7 @@ class UserService implements IUserService {
             //TEMP: handle this error
             return {error: 'Whatsapp info violates the constraints in the database'}
         }
-        this.facebookRepository.upsertWhatsappInfo(userId, tokenData.access_token, debugToken, wabaInfo);
+        this.facebookRepository.upsertWhatsappInfo(companyId, tokenData.access_token, debugToken, wabaInfo);
 
         return {ok: 'ok!'};
     }

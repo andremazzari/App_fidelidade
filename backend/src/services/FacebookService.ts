@@ -122,7 +122,7 @@ class FacebookService implements IFacebookService {
 
     checkWhatsappInfoBeforeDB(token: string, debugToken: any, wabaInfo: WABAInfo): boolean {
         //Check lenghts of the values before inserting in the database
-        //TEMP: decide how to handle values that not comply with the limmits. Log this value and sent alerts.
+        //TEMP: decide how to handle values that not comply with the limits. Log this value and sent alerts.
         //TEMP: Do a research to estimate these maximum values.
         let errorFlag = true;
 
@@ -164,16 +164,16 @@ class FacebookService implements IFacebookService {
         return errorFlag;
     }
 
-    async sendFidelityWhatsappMessage(userId: string, phone: number, createdAt: string, points: number, target: number): Promise<any> {
-        const whatsappInfo = await this.facebookRepository.getWhatsappInfo(userId, ['token', 'token_expires_at', 'phone_id']);
+    async sendFidelityWhatsappMessage(companyId: string, phone: number, createdAt: string, points: number, target: number): Promise<any> {
+        const whatsappInfo = await this.facebookRepository.getWhatsappInfo(companyId, ['token', 'tokenExpiresAt', 'phoneId']);
 
-        if (!this.checkWhatsappToken(whatsappInfo.token, whatsappInfo.token_expires_at)) {
+        if (!this.checkWhatsappToken(whatsappInfo.token, whatsappInfo.tokenExpiresAt)) {
             //TEMP: handle this to inform to the user that the token has expired
             return false
         }
 
-        let selectedTemplateId = await this.fidelityRepository.getFidelityConfig(userId, 'whatsapp_template_id');
-        selectedTemplateId = selectedTemplateId.whatsapp_template_id;
+        let selectedTemplateId = await this.fidelityRepository.getFidelityConfig(companyId, 'whatsappTemplateId');
+        selectedTemplateId = selectedTemplateId.whatsappTemplateId;
         
         if (selectedTemplateId == null) {
             //TEMP: handle this to inform the user that he must select a template
@@ -182,10 +182,10 @@ class FacebookService implements IFacebookService {
         }
 
         //Prepare template information
-        const templateConfig = new WhatsappTemplate(userId, selectedTemplateId, points, target);
+        const templateConfig = new WhatsappTemplate(companyId, selectedTemplateId, points, target);
         await templateConfig.prepareTemplateInfo();
         
-        const url = `${FacebookUtils.baseUrl()}/${whatsappInfo.phone_id}/messages`;
+        const url = `${FacebookUtils.baseUrl()}/${whatsappInfo.phoneId}/messages`;
         //TEMP: include the country code (+55) in the number
         const body: Record<string, any> = {
             messaging_product: 'whatsapp',
@@ -216,7 +216,7 @@ class FacebookService implements IFacebookService {
         const wamid = FacebookUtils.extractWABMID(data.messages[0].id);
 
         try {
-            await this.facebookRepository.updateFidelityWhatsappMessageID(userId, phone, createdAt, wamid)
+            await this.facebookRepository.updateFidelityWhatsappMessageID(companyId, phone, createdAt, wamid)
         } catch (error) {
             //TEMP: handle this error (message id not saved in the database)
         }
@@ -234,12 +234,12 @@ class FacebookService implements IFacebookService {
         }
     }
 
-    async searchWhatsappTemplate(userId: string, templateId: string | undefined, templateName: string | undefined, fields: string): Promise<any> {
+    async searchWhatsappTemplate(companyId: string, templateId: string | undefined, templateName: string | undefined, fields: string): Promise<any> {
         //TEMP: include the possibility of searching by id, use paging, etc.
         //temp: include the possibility of choosing the fields
-        const whatsappInfo = await this.facebookRepository.getWhatsappInfo(userId, ['token', 'token_expires_at', 'waba_id']);
-
-        if (!this.checkWhatsappToken(whatsappInfo.token, whatsappInfo.token_expires_at)) {
+        const whatsappInfo = await this.facebookRepository.getWhatsappInfo(companyId, ['token', 'tokenExpiresAt', 'wabaId']);
+        
+        if (!this.checkWhatsappToken(whatsappInfo.token, whatsappInfo.tokenExpiresAt)) {
             //TEMP: handle this to inform to the user that the token has expired
             return false
         }
@@ -252,7 +252,7 @@ class FacebookService implements IFacebookService {
             url = `${FacebookUtils.baseUrl()}/${templateId}?` + urlParams.toString();
         } else if (templateName !== undefined) {
             urlParams.append('name', templateName);
-            url = `${FacebookUtils.baseUrl()}/${whatsappInfo.waba_id}/message_templates?` + urlParams.toString();
+            url = `${FacebookUtils.baseUrl()}/${whatsappInfo.wabaId}/message_templates?` + urlParams.toString();
         } else {
             //TEMP: handle this error
         }
@@ -271,16 +271,16 @@ class FacebookService implements IFacebookService {
         return data
     }
 
-    async createWhatsappTemplate(userId: string, templateName: string, templateCategory: string, components: Array<any>): Promise<any> {
+    async createWhatsappTemplate(companyId: string, templateName: string, templateCategory: string, components: Array<any>): Promise<any> {
         //Send request to facebook to create the template
-        const whatsappInfo = await this.facebookRepository.getWhatsappInfo(userId, ['token', 'token_expires_at', 'waba_id']);
+        const whatsappInfo = await this.facebookRepository.getWhatsappInfo(companyId, ['token', 'tokenExpiresAt', 'wabaId']);
 
-        if (!this.checkWhatsappToken(whatsappInfo.token, whatsappInfo.token_expires_at)) {
+        if (!this.checkWhatsappToken(whatsappInfo.token, whatsappInfo.tokenExpiresAt)) {
             //TEMP: handle this to inform to the user that the token has expired
             return false
         }
         
-        const url = `${FacebookUtils.baseUrl()}/${whatsappInfo.waba_id}/message_templates`;
+        const url = `${FacebookUtils.baseUrl()}/${whatsappInfo.wabaId}/message_templates`;
         //TEMP: allow other languages
         const body = {
             name: templateName,
@@ -301,16 +301,16 @@ class FacebookService implements IFacebookService {
         
         //Register the template in our platform
         const componentsConfig = JSON.stringify(FacebookUtils.prepareComponentsConfig(components));
-        await this.facebookRepository.upsertWhatsappTemplate(userId, data.id, templateName, 'pt_BR', data.status, data.category, componentsConfig);
+        await this.facebookRepository.upsertWhatsappTemplate(companyId, data.id, templateName, 'pt_BR', data.status, data.category, componentsConfig);
     }
 
-    async getRegisteredWhatsappTemplates(userId: string): Promise<any> {
-        return await this.facebookRepository.getRegisteredWhatsappTemplates(userId);
+    async getRegisteredWhatsappTemplates(companyId: string): Promise<any> {
+        return await this.facebookRepository.getRegisteredWhatsappTemplates(companyId);
     }
 
-    async upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, templateStatus: string, templateCategory: string, componentsConfig: string): Promise<any> {
+    async upsertWhatsappTemplate(companyId: string, templateId: string, templateName: string, languageCode: string, templateStatus: string, templateCategory: string, componentsConfig: string): Promise<any> {
         //TEMP: should I validate here if the template belongs to the user ?
-        await this.facebookRepository.upsertWhatsappTemplate(userId, templateId, templateName, languageCode, templateStatus, templateCategory, componentsConfig);
+        await this.facebookRepository.upsertWhatsappTemplate(companyId, templateId, templateName, languageCode, templateStatus, templateCategory, componentsConfig);
     }
 }
 

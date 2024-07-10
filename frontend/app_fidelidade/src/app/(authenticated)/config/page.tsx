@@ -24,11 +24,7 @@ async function fetchConfig(): Promise<configFields> {
         console.log('Erro ao ler config')
     }
 
-    return {
-        target: response.data.target,
-        whatsappMessageEnabled: response.data.whatsapp_message_enabled,
-        whatsappTemplateId: response.data.whatsapp_template_id
-    } as configFields;    
+    return response.data as configFields;    
 }
 
 async function getRegisteredTemplates(): Promise<Array<whatsappTemplateInfo>> {
@@ -51,9 +47,9 @@ async function getRegisteredTemplates(): Promise<Array<whatsappTemplateInfo>> {
         //TEMP: fill status and category
         const transformedTemplatesInfo = response.data.map((template: any) => {
             return {
-                templateId: template.template_id,
-                templateName: template.template_name,
-                language: template.language_code,
+                templateId: template.templateId,
+                templateName: template.templateName,
+                language: template.languageCode,
                 status: '',
                 category: ''
             } as whatsappTemplateInfo

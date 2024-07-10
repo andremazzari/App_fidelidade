@@ -32,7 +32,7 @@ BEGIN
     -- Get the last inserted ID
     SET v_lastInsertId = LAST_INSERT_ID();
 
-    -- redeem the points the records in the fidelity history
+    -- redeem the points in the fidelity history
     WITH timestamp_limits AS (
             SELECT
                 MIN(created_at) AS min_timestamp,

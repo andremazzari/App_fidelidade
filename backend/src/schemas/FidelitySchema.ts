@@ -214,8 +214,8 @@ class FidelitySchemas {
 
             return true;
         }),
-        whatsapp_message_enabled: boolean(),
-        whatsapp_template_id: string()
+        whatsappMessageEnabled: boolean(),
+        whatsappTemplateId: string()
     }).required('Config undefined or invalid').noUnknown().strict().test('at-least-one-field', 'No fields to update', (config: {[key: string]: any}) => {
         return config && Object.keys(config).some((key: string) => config[key] !== undefined && config[key] !== null);
     })
@@ -225,14 +225,26 @@ class FidelitySchemas {
 
      static registerFidelity() {
         return object({
+            companyId: string().required().uuid(),
+            userId: string().required().uuid(),
             phone: this.phoneValidationRequired,
-            userId: string().required().uuid()
+            points: string().required().test('invalid-points', 'Invalid number of points', (points) => {
+                if (points == '') {
+                    return false
+                }
+
+                if (/^\d*$/.test(points)) {
+                    return true
+                } else {
+                    return false
+                }
+            })
         }).noUnknown().strict()
      }
 
     static getRecords() {
         return object({
-            userId: string().required().uuid(),
+            companyId: string().required().uuid(),
             pageNumber: string().required().matches(/^\d+$/),
             pageSize: string().required().matches(/^\d+$/),
             phone: this.phoneValidationNotRequired,
@@ -245,6 +257,7 @@ class FidelitySchemas {
 
     static deleteFidelity() {
         return object({
+            companyId: string().required().uuid(),
             userId: string().required().uuid(),
             phone: this.phoneValidationRequired,
             timestamp: string().required().test('isTiestampValid', 'Invalid timestmp', function(timestamp) {
@@ -260,7 +273,7 @@ class FidelitySchemas {
 
     static getRecordsCountPages() {
         return object({
-            userId: string().required().uuid(),
+            companyId: string().required().uuid(),
             pageSize: string().required().matches(/^\d+$/),
             phone: this.phoneValidationNotRequired,
             initialDate: this.initialDateValidation,
@@ -272,26 +285,27 @@ class FidelitySchemas {
 
     static getFidelityInfo() {
         return object({
-            userId: string().required().uuid(),
+            companyId: string().required().uuid(),
             phone: this.phoneValidationRequired
         }).noUnknown().strict();
     }
 
     static getFidelityConfig() {
         return object({
-            userId: string().required().uuid()
+            companyId: string().required().uuid()
         }).noUnknown().strict()
     }
 
     static updateFidelityConfig() {
         return object({
-            userId: string().required().uuid(),
+            companyId: string().required().uuid(),
             config: this.configFields
         }).noUnknown().strict()
     }
 
     static redeemFidelity() {
         return object({
+            companyId: string().required().uuid(),
             userId: string().required().uuid(),
             phone: this.phoneValidationRequired
         }).noUnknown().strict();
@@ -299,7 +313,7 @@ class FidelitySchemas {
 
     static getRedeemRecords() {
         return object({
-            userId: string().required().uuid(),
+            companyId: string().required().uuid(),
             pageNumber: string().required().matches(/^\d+$/),
             pageSize: string().required().matches(/^\d+$/),
             phone: this.phoneValidationNotRequired,

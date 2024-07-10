@@ -9,20 +9,20 @@ class FidelityService implements IFidelityService {
         private fidelityRepository: IFidelityRepository
     ) {}
 
-    async registerFidelity(phone: number, userId: string): Promise<any> {
+    async registerFidelity(companyId: string, userId: string, phone: number, points: number): Promise<any> {
         //TEMP: review errors and return types
         try {
-            const createdAt = await this.fidelityRepository.registerFidelity(phone, userId);
+            const createdAt = await this.fidelityRepository.registerFidelity(companyId, userId, phone, points);
 
             //If enabled, notify user via whatsapp.
-            const config = await this.fidelityRepository.getFidelityConfig(userId);
+            const config = await this.fidelityRepository.getFidelityConfig(companyId);
             
-            if (config.whatsapp_message_enabled) {
+            if (config.whatsappMessageEnabled) {
                 //send whatsapp message
                 //get current points and target
-                const {target, points} = await this.getFidelityInfo(userId, phone);
+                const {target, points} = await this.getFidelityInfo(companyId, phone);
 
-                const result = await this.facebookService.sendFidelityWhatsappMessage(userId, phone, createdAt, points, target);
+                const result = await this.facebookService.sendFidelityWhatsappMessage(companyId, phone, createdAt, points, target);
             }
 
             return {status: 201, json: {}}
@@ -31,13 +31,13 @@ class FidelityService implements IFidelityService {
         }
     }
 
-    async getRecords(userId: string, pageNumber: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<any> {
+    async getRecords(companyId: string, pageNumber: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<any> {
         //TEMP: review errors and return types
         try {
             const offset = (pageNumber - 1) * pageSize
-            const records = await this.fidelityRepository.getRecords(userId, offset, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled);
+            const records = await this.fidelityRepository.getRecords(companyId, offset, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled);
 
-            const pages = await this.getRecordsCountPages(userId, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled);
+            const pages = await this.getRecordsCountPages(companyId, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled);
 
             return {pages, records}
         } catch (error) {
@@ -45,9 +45,9 @@ class FidelityService implements IFidelityService {
         }
     }
 
-    async deleteFidelityRecord(userId: string, phone: number, timestamp: string): Promise<string> {
+    async deleteFidelityRecord(companyId: string, userId: string, phone: number, timestamp: string): Promise<string> {
         try {
-            const result = await this.fidelityRepository.deleteFidelityRecord(userId, phone, timestamp);
+            const result = await this.fidelityRepository.deleteFidelityRecord(companyId, userId, phone, timestamp);
 
             //Should the client be notified via whatsapp message ?
             return result
@@ -56,10 +56,10 @@ class FidelityService implements IFidelityService {
         }
     }
 
-    async getRecordsCountPages(userId: string, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<number> {
+    async getRecordsCountPages(companyId: string, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<number> {
         //TEMP: review errors and return types
         try {
-            const totalCount = await this.fidelityRepository.getRecordsCount(userId, phone, initialDate, endDate, excludeRedeemed, includeCanceled);
+            const totalCount = await this.fidelityRepository.getRecordsCount(companyId, phone, initialDate, endDate, excludeRedeemed, includeCanceled);
 
             const pages = Math.ceil(totalCount / pageSize); 
 
@@ -69,20 +69,20 @@ class FidelityService implements IFidelityService {
         }
     }
 
-    async getFidelityInfo(userId: string, phone: number): Promise<FidelityInfo> {
+    async getFidelityInfo(companyId: string, phone: number): Promise<FidelityInfo> {
         try {
             //Get target for this phone
-            let target = await this.fidelityRepository.getOlderTarget(userId, phone);
+            let target = await this.fidelityRepository.getOlderTarget(companyId, phone);
 
             if (target == null) {
                 //get current target
                 //TEMP: treat errors
-                const currentFidelityConfig = await this.fidelityRepository.getFidelityConfig(userId);
+                const currentFidelityConfig = await this.fidelityRepository.getFidelityConfig(companyId);
                 target = currentFidelityConfig.target as number;
             }
 
             //Get quantity of records for this phone
-            let points = await this.fidelityRepository.countPoints(userId, phone);
+            let points = await this.fidelityRepository.countPoints(companyId, phone);
 
             return {target, points}
         } catch (error) {
@@ -90,32 +90,32 @@ class FidelityService implements IFidelityService {
         }
     }
 
-    async getFidelityConfig(userId: string): Promise<any> {
+    async getFidelityConfig(companyId: string): Promise<any> {
         try {
-            return await this.fidelityRepository.getFidelityConfig(userId);
+            return await this.fidelityRepository.getFidelityConfig(companyId);
         } catch (error) {
             throw error
         } 
     }
 
-    async updateFidelityConfig(userId: string, config: FidelityConfig): Promise<boolean> {
+    async updateFidelityConfig(companyId: string, config: FidelityConfig): Promise<boolean> {
         try {
-            return await this.fidelityRepository.updateFidelityConfig(userId, config);
+            return await this.fidelityRepository.updateFidelityConfig(companyId, config);
         } catch (error) {
             throw error
         } 
     }
 
-    async redeemFidelity(userId: string, phone: number): Promise<FidelityInfo> {
+    async redeemFidelity(companyId: string, userId: string, phone: number): Promise<FidelityInfo> {
         try {
-            const {target, points} = await this.getFidelityInfo(userId, phone);
+            const {target, points} = await this.getFidelityInfo(companyId, phone);
 
             if (points >= target) {
                 //redeem points
-                await this.fidelityRepository.redeemFidelity(userId, phone, target);
+                await this.fidelityRepository.redeemFidelity(companyId, userId, phone, target);
 
                 //get updated values for points and target
-                const newValues = await this.getFidelityInfo(userId, phone);
+                const newValues = await this.getFidelityInfo(companyId, phone);
 
                 return {points: newValues.points, target: newValues.target}
             } else {
@@ -128,12 +128,12 @@ class FidelityService implements IFidelityService {
         }
     }
 
-    async getRedeemRecords(userId: string, pageNumber: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any> {
+    async getRedeemRecords(companyId: string, pageNumber: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any> {
         try {
             const offset = (pageNumber - 1) * pageSize
-            const records = await this.fidelityRepository.getRedeemRecords(userId, offset, pageSize, phone, initialDate, endDate);
+            const records = await this.fidelityRepository.getRedeemRecords(companyId, offset, pageSize, phone, initialDate, endDate);
 
-            const pages = await this.getRedeemRecordsCountPages(userId, pageSize, phone, initialDate, endDate);
+            const pages = await this.getRedeemRecordsCountPages(companyId, pageSize, phone, initialDate, endDate);
 
             return {pages, records}
         } catch (error) {
@@ -141,10 +141,10 @@ class FidelityService implements IFidelityService {
         }
     }
 
-    async getRedeemRecordsCountPages(userId: string, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number> {
+    async getRedeemRecordsCountPages(companyId: string, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number> {
         //TEMP: review errors and return types
         try {
-            const totalCount = await this.fidelityRepository.getRedeemRecordsCount(userId, phone, initialDate, endDate);
+            const totalCount = await this.fidelityRepository.getRedeemRecordsCount(companyId, phone, initialDate, endDate);
 
             const pages = Math.ceil(totalCount / pageSize); 
 

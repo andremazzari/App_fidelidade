@@ -53,20 +53,20 @@ export interface IFacebookService {
     getWABAId(granular_scopes: Array<any>): string | null
     getWABAInfo(wabaId: string, token: string): Promise<WABAInfo | FacebookAPIError>
     checkWhatsappInfoBeforeDB(token: string, debugToken: any, wabaInfo: WABAInfo): boolean
-    sendFidelityWhatsappMessage(userId: string, phone: number, createdAt: string, points: number, target: number): Promise<any>
+    sendFidelityWhatsappMessage(companyId: string, phone: number, createdAt: string, points: number, target: number): Promise<any>
     checkWhatsappToken(token: string, expiresAt: Date | string): boolean
-    searchWhatsappTemplate(userId: string, templateId: string | undefined, templateName: string | undefined, fields: string): Promise<any>
-    createWhatsappTemplate(userId: string, templateName: string, templateCategory: string, components: Array<any>): Promise<any>
-    getRegisteredWhatsappTemplates(userId: string): Promise<any>
-    upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, templateStatus: string, templateCategory: string, componentsConfig: string): Promise<any>
+    searchWhatsappTemplate(companyId: string, templateId: string | undefined, templateName: string | undefined, fields: string): Promise<any>
+    createWhatsappTemplate(companyId: string, templateName: string, templateCategory: string, components: Array<any>): Promise<any>
+    getRegisteredWhatsappTemplates(companyId: string): Promise<any>
+    upsertWhatsappTemplate(companyId: string, templateId: string, templateName: string, languageCode: string, templateStatus: string, templateCategory: string, componentsConfig: string): Promise<any>
 }
 
 export interface IFacebookRepository {
-    getWhatsappInfo(userId: string, fields?: Array<string>): Promise<any>
-    upsertWhatsappInfo(userId: string, token: string, debugToken: any, wabaInfo: WABAInfo): Promise<void>
-    updateFidelityWhatsappMessageID(userId: string, phone: number, createdAt: string, wamid: string): Promise<void>
+    getWhatsappInfo(companyId: string, fields?: Array<string>): Promise<any>
+    upsertWhatsappInfo(companyId: string, token: string, debugToken: any, wabaInfo: WABAInfo): Promise<void>
+    updateFidelityWhatsappMessageID(companyId: string, phone: number, createdAt: string, wamid: string): Promise<void>
     getWhatsappTemplateComponentsConfig(userId: string, templateId: string): Promise<any>
-    getWhatsappTemplateInfo(userId: string, templateId: string): Promise<any>
-    getRegisteredWhatsappTemplates(userId: string): Promise<any>
-    upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, templateStatus: string, templateCategory: string, componentsConfig: string): Promise<any>
+    getWhatsappTemplateInfo(companyId: string, templateId: string): Promise<any>
+    getRegisteredWhatsappTemplates(companyId: string): Promise<any>
+    upsertWhatsappTemplate(companyId: string, templateId: string, templateName: string, languageCode: string, templateStatus: string, templateCategory: string, componentsConfig: string): Promise<any>
 }

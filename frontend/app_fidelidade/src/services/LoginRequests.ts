@@ -24,7 +24,7 @@ class LoginRequests {
         }
     }
 
-    static async createUserAccount(name: string, email: string, password: string) {
+    static async signUp(name: string, email: string, password: string) {
         const body = {
             name,
             email,
@@ -33,7 +33,7 @@ class LoginRequests {
 
         const options: sendProps = {
             method: 'POST',
-            url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/user`,
+            url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/user/signup`,
             body: body,
             contentType: 'form-urlencoded',
             cache: 'no-store'

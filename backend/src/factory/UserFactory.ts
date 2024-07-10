@@ -3,6 +3,7 @@ import UserController from "../controllers/UserController";
 import UserService from "../services/UserService"
 import UserRepository from "../repositories/UserRepository";
 import { IUserController, IUserService, IUserRepository } from "../models/User";
+import AuthService from "../services/AuthService";
 import EmailService from "../services/EmailService";
 import FidelityFactory from "./FidelityFactory";
 import FacebookFactory from "./FacebookFactory";
@@ -17,6 +18,7 @@ class UserFactory {
     static service(): IUserService {
         return new UserService(
             this.repository(),
+            new AuthService(),
             new EmailService(),
             FacebookFactory.service(),
             FidelityFactory.repository(),

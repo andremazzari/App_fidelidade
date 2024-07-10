@@ -24,7 +24,7 @@ export default function RedeemHistoryTable({initialData}: RedeemHistoryTableProp
                     initialData.map((record, index) => (
                         <tr className={index % 2 == 0 ? 'evenrow' : 'oddrow'} key={index}>
                             <td>{Utils.formatPhone(record.phone)}</td>
-                            <td>{Utils.formatTimestamp(record.created_at)}</td>
+                            <td>{Utils.formatTimestamp(record.createdAt)}</td>
                             <td>{record.points}</td>
                         </tr>
                     ))

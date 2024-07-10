@@ -1,11 +1,16 @@
 create table app_fidelidade.fidelity_history (
-	id binary(16),
+	fidelityId int unsigned auto_increment,
+	companyId binary(16),
 	phone bigint unsigned,
 	points tinyint unsigned,
 	target tinyint unsigned,
-	created_at timestamp(1) not null default current_timestamp(1),
-	redeemed_at timestamp null default null,
-	redeem_id int null default null,
-	canceled_at timestamp(1) null default null,
-	whatsapp_message_id varchar(65) null default null
+	createdAt timestamp(1) not null default current_timestamp(1),
+	redeemedAt timestamp null default null,
+	redeemId int null default null,
+	canceledAt timestamp(1) null default null,
+	whatsappMessageId varchar(65) null default null,
+	originalFidelityId int unsigned null default null,
+	createdBy binary(16),
+	canceledBy binary(16),
+	primary key (fidelityId)
 );

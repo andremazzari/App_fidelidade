@@ -12,8 +12,8 @@ export interface FidelityInfo {
 
 export interface FidelityConfig {
     target?: number | string
-    whatsapp_message_enabled?: boolean
-    whatsapp_template_id?: string
+    whatsappMessageEnabled?: boolean
+    whatsappTemplateId?: string
 }
 
 //---------------------------------------
@@ -35,29 +35,29 @@ export interface IFidelityController {
 }
 
 export interface IFidelityService {
-    registerFidelity(phone: number, userId: string): Promise<any>;
-    getRecords(userId: string, pageNumber: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<any>;
-    deleteFidelityRecord(userId: string, phone: number, timestamp: string): Promise<string>;
-    getRecordsCountPages(userId: string, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<number>;
-    getFidelityInfo(userId: string, phone: number): Promise<FidelityInfo>;
-    updateFidelityConfig(userId: string, config: FidelityConfig): Promise<boolean>;
-    getFidelityConfig(userId: string): Promise<any>;
-    redeemFidelity(userId: string, phone: number): Promise<FidelityInfo>;
-    getRedeemRecords(userId: string, pageNumber: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any>;
-    getRedeemRecordsCountPages(userId: string, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number>
+    registerFidelity(companyId: string, userId: string, phone: number, points: number): Promise<any>;
+    getRecords(companyId: string, pageNumber: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<any>;
+    deleteFidelityRecord(companyId: string, userId: string, phone: number, timestamp: string): Promise<string>;
+    getRecordsCountPages(companyId: string, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<number>;
+    getFidelityInfo(companyId: string, phone: number): Promise<FidelityInfo>;
+    getFidelityConfig(companyId: string): Promise<any>;
+    updateFidelityConfig(companyId: string, config: FidelityConfig): Promise<boolean>;
+    redeemFidelity(companyId: string, userId: string, phone: number): Promise<FidelityInfo>;
+    getRedeemRecords(companyId: string, pageNumber: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any>;
+    getRedeemRecordsCountPages(companyId: string, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number>
 }
 
 export interface IFidelityRepository {
-    registerFidelity(phone: number, userId: string): Promise<string>;
-    getRecords(userId: string, offset: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<any>;
-    deleteFidelityRecord(userId: string, phone: number, timestamp: string): Promise<string>;
-    getRecordsCount(userId: string, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<number>;
-    countPoints(userId: string, phone: number, initialDate?: string, endDate?: string): Promise<number>;
-    getOlderTarget(userId: string, phone: number): Promise<number | null>;
-    createFidelityConfig(userId: string): Promise<void>;
-    updateFidelityConfig(userId: string, config: FidelityConfig): Promise<boolean>;
-    getFidelityConfig(userId: string, columns?: string): Promise<any>;
-    redeemFidelity(userId: string, phone: number, target: number): Promise<void>;
-    getRedeemRecords(userId: string, offset: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any>;
-    getRedeemRecordsCount(userId: string, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number>;
+    registerFidelity(companyId: string, userId: string, phone: number, points: number): Promise<string>;
+    getRecords(companyId: string, offset: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<any>;
+    deleteFidelityRecord(companyId: string, userId: string, phone: number, timestamp: string): Promise<string>;
+    getRecordsCount(companyId: string, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<number>;
+    countPoints(companyId: string, phone: number, initialDate?: string, endDate?: string): Promise<number>;
+    getOlderTarget(companyId: string, phone: number): Promise<number | null>;
+    createFidelityConfig(companyId: string): Promise<void>;
+    getFidelityConfig(companyId: string, columns?: string): Promise<any>;
+    updateFidelityConfig(companyId: string, config: FidelityConfig): Promise<boolean>;
+    redeemFidelity(companyId: string, userId: string, phone: number, target: number): Promise<void>;
+    getRedeemRecords(companyId: string, offset: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any>;
+    getRedeemRecordsCount(companyId: string, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number>;
 }

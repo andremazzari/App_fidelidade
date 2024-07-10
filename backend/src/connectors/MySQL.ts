@@ -144,6 +144,18 @@ class MySQLClient {
             throw error;
         }
     }
+
+    async startTransaction() {
+        this.connection?.beginTransaction()
+    }
+
+    async commit() {
+        this.connection?.commit()
+    }
+
+    async rollback() {
+        this.connection?.rollback()
+    }
 }
 
 export const mysqlClient = new MySQLClient()

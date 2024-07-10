@@ -12,20 +12,20 @@ class FacebookController implements IFacebookController {
     constructor(private facebookService: IFacebookService) {}
 
     async searchWhatsappTemplate(req: Request, res: Response): Promise<Response> {
-        const userId = req.body.userId;
+        const companyId = req.body.companyId;
         const templateId = req.query.templateId;
         const templateName = req.query.templateName;
         const fields = req.query.fields;
-
+        
         try {
-            await FacebookSchemas.searchWhatsappTemplate().validate({userId, templateId, templateName, fields})
+            await FacebookSchemas.searchWhatsappTemplate().validate({companyId, templateId, templateName, fields})
             //await SearchWhatsappTemplateSchema.validate({userId, templateId, templateName, fields})
         } catch (error) {
             return res.status(400).json({error});
         }
 
         try {
-            const result = await this.facebookService.searchWhatsappTemplate(userId, templateId as string | undefined, templateName as string | undefined, fields as string);
+            const result = await this.facebookService.searchWhatsappTemplate(companyId, templateId as string | undefined, templateName as string | undefined, fields as string);
             return res.status(200).json(result);
         } catch (error) {
             return res.status(500).json({error});
@@ -33,20 +33,20 @@ class FacebookController implements IFacebookController {
     }
 
     async createWhatsappTemplate(req: Request, res: Response): Promise<Response> {
-        const userId = req.body.userId;
+        const companyId = req.body.companyId;
         const templateName = req.body.templateName;
         const templateCategory = req.body.templateCategory;
         const components = Utils.parseJSONString(req.body.components);
 
         try {
-            await FacebookSchemas.createWhatsappTemplate().validate({userId, templateName, templateCategory, components})
+            await FacebookSchemas.createWhatsappTemplate().validate({companyId, templateName, templateCategory, components})
             //await CreateWhatsappTemplateSchema.validate({userId, templateName, templateCategory, components})
         } catch (error) {
             return res.status(400).json({error});
         }
 
         try {
-            await this.facebookService.createWhatsappTemplate(userId, templateName, templateCategory, components);
+            await this.facebookService.createWhatsappTemplate(companyId, templateName, templateCategory, components);
             return res.status(200).json({});
         } catch (error) {
             return res.status(500).json({error});
@@ -54,17 +54,17 @@ class FacebookController implements IFacebookController {
     }
 
     async getRegisteredWhatsappTemplates(req: Request, res: Response): Promise<Response> {
-        const userId = req.body.userId;
+        const companyId = req.body.companyId;
 
         try {
-            await FacebookSchemas.getRegisteredWhatsappTemplates().validate({userId});
+            await FacebookSchemas.getRegisteredWhatsappTemplates().validate({companyId});
             //await GetRegisteredWhatsappTemplates.validate({userId})
         } catch (error) {
             return res.status(400).json({error});
         }
 
         try {
-            const result = await this.facebookService.getRegisteredWhatsappTemplates(userId);
+            const result = await this.facebookService.getRegisteredWhatsappTemplates(companyId);
             return res.status(200).json(result);
         } catch (error) {
             return res.status(500).json({error});
@@ -72,7 +72,7 @@ class FacebookController implements IFacebookController {
     }
 
     async upsertWhatsappTemplate(req: Request, res: Response): Promise<Response> {
-        const userId = req.body.userId;
+        const companyId = req.body.companyId;
         const templateId = req.body.templateId;
         const templateName = req.body.templateName;
         const languageCode = req.body.templateLanguage;
@@ -81,7 +81,7 @@ class FacebookController implements IFacebookController {
         const componentsConfig = req.body.componentsConfig;
         
         try {
-            await FacebookSchemas.upsertWhatsappTemplate().validate({userId, templateId, templateName, languageCode, templateStatus, templateCategory, componentsConfig: JSON.parse(componentsConfig)});
+            await FacebookSchemas.upsertWhatsappTemplate().validate({companyId, templateId, templateName, languageCode, templateStatus, templateCategory, componentsConfig: JSON.parse(componentsConfig)});
             //await UpsertWhatsappTemplateSchema.validate({userId, templateId, templateName, languageCode, templateStatus, templateCategory, componentsConfig: JSON.parse(componentsConfig)})
         } catch (error) {
             return res.status(400).json({error});
@@ -89,7 +89,7 @@ class FacebookController implements IFacebookController {
 
         try {
             //TEMP: handle errors
-            await this.facebookService.upsertWhatsappTemplate(userId, templateId, templateName, languageCode, templateStatus, templateCategory, componentsConfig);
+            await this.facebookService.upsertWhatsappTemplate(companyId, templateId, templateName, languageCode, templateStatus, templateCategory, componentsConfig);
             //TEMP: should I return something ?
             return res.status(200).json({});
         } catch (error) {

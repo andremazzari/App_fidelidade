@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 
 //internal dependencies
 import LoginRequests from "../LoginRequests"
+import RequestsUtils, { sendProps } from "@/utils/RequestUtils"
 
 //form state
 export interface LoginFormStateProps {
@@ -50,14 +51,14 @@ export async function Logout(redirectFlag: boolean) {
     }
 }
 
-export async function createUserAccount(prevState: LoginFormStateProps, formData: FormData) {
+export async function signUp(prevState: LoginFormStateProps, formData: FormData) {
     //TEMP: validate input here ?
     try {
         const name = formData.get('name') as string;
         const email =  formData.get('email') as string;
         const password = formData.get('password') as string;
 
-        const response  = await LoginRequests.createUserAccount(name, email, password);
+        const response  = await LoginRequests.signUp(name, email, password);
         const status = await response.status;
 
         if (status != 201) {
@@ -70,7 +71,7 @@ export async function createUserAccount(prevState: LoginFormStateProps, formData
         createTokenCookie(data.token);
     } catch(error) {
         if (process.env.ENV == 'DEV') {
-            console.log('Error at createUserAccount at Authentication:');
+            console.log('Error at signUp at Authentication:');
             console.log(error);
         }
         
@@ -79,6 +80,79 @@ export async function createUserAccount(prevState: LoginFormStateProps, formData
 
     //TEMP: defined redirect path
     redirect('/');
+}
+
+export interface requestResetPasswordProps {
+    success: boolean | null
+    message: string
+}
+export async function requestResetPassword(prevState: requestResetPasswordProps, formData: FormData): Promise<requestResetPasswordProps> {
+    const email = formData.get('email') as string;
+
+    try {
+        const options: sendProps = {
+            method: 'POST',
+            url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/user/forgotPassword`,
+            body: {email},
+            contentType: 'form-urlencoded',
+            cache: 'no-store'
+        }
+
+        const response = await RequestsUtils.send(options);
+
+        if (response.status != 200) {
+            //TEMP: handle this error
+            return {success: false, message:'Erro ao enviar solicitação. Tente novamente.'}
+        }
+
+        return {success: true, message: 'Email para redefinir senha enviado.'}
+    } catch (error) {
+        return {success: false, message:'Erro ao enviar solicitação. Tente novamente.'}
+    }
+}
+
+export interface resetPasswordProps {
+    success: boolean | null
+    message: string
+    display: boolean
+}
+export async function resetPassword(prevState: resetPasswordProps, formData: FormData): Promise<resetPasswordProps> {
+    const userId = formData.get('userId');
+    const token = formData.get('token');
+    const password = formData.get('password');
+    const confirmPassword = formData.get('confirmPassword');
+
+    //validations
+    if (token == '' || userId == '') {
+        return {success: false, message: 'Requisição invalida', display: false}
+    }
+
+    if (password != confirmPassword) {
+        return {success: false, message: 'Senhas devem ser iguais', display: true}
+    }
+    //TEMP: implement other password validations (lenght, special characters, etc)
+
+    try {
+        const options: sendProps = {
+            method: 'POST',
+            url: `${process.env.NEXT_PUBLIC_BACKEND_SERVER_ADDRESS as string}/user/resetPassword`,
+            body: {userId, token, password, confirmPassword},
+            contentType: 'form-urlencoded',
+            cache: 'no-store'
+        }
+
+        const response = await RequestsUtils.send(options);
+
+        if (response.status != 200) {
+            //TEMP: handle this error
+            return {success: false, message: 'Algo deu errado. Faça um novo pedido de alteração de senha.', display: false}
+        }
+
+        return {success: true, message: 'Senha alterado com sucesso.', display: false}
+    } catch (error) {
+        return {success: false, message: 'Algo deu errado. Faça um novo pedido de alteração de senha.', display: false}
+    }
+
 }
 
 async function createTokenCookie(token: string) {

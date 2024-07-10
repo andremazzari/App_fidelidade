@@ -5,7 +5,7 @@ import { useFormState, useFormStatus } from "react-dom";
 //internal dependencies
 import { FormContainer, FormItem, FormButtonContainer, FormButton } from "../styled";
 import { LoginFormStateProps } from "@/services/ServerActions/Authentication";
-import { createUserAccount } from "@/services/ServerActions/Authentication";
+import { signUp } from "@/services/ServerActions/Authentication";
 
 interface SignUpFormContentProps {
     formState: LoginFormStateProps
@@ -44,7 +44,7 @@ function SignUpFormContent({formState}: SignUpFormContentProps) {
 export default function SignUpForm() {
     //Encrypt data before sending ?
 
-    const [formState, formAction] = useFormState(createUserAccount, {message:''});
+    const [formState, formAction] = useFormState(signUp, {message:''});
     return (
         <FormContainer action={formAction} method="POST">
             <SignUpFormContent formState={formState}/>

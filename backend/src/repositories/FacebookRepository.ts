@@ -3,7 +3,7 @@ import { IFacebookRepository, WABAInfo } from "../models/Facebook";
 import { mysqlClient } from "../connectors/MySQL";
 
 class FacebookRepository implements IFacebookRepository {
-    async getWhatsappInfo(userId: string, fields: Array<string> = ['token', 'token_expires_at', 'fb_user_id', 'waba_id', 'waba_name', 'phone_id', 'phone_number', 'phone_name', 'phone_verification_status']): Promise<any> {
+    async getWhatsappInfo(companyId: string, fields: Array<string> = ['token', 'tokenExpiresAt', 'fbUserId', 'wabaId', 'wabaName', 'phoneId', 'phoneNumber', 'phoneName', 'phoneVerificationStatus']): Promise<any> {
         //Build string of columns that will be included in the sql query
         let selectColumns: string = '';
         let first = true;
@@ -21,12 +21,12 @@ class FacebookRepository implements IFacebookRepository {
         SELECT
             ${selectColumns}
         FROM
-            ${process.env.MYSQL_DATABASE as string}.user_whatsapp
+            ${process.env.MYSQL_DATABASE as string}.whatsapp_info
         WHERE
-            id = UUID_TO_BIN(?, TRUE)
+            companyId = UUID_TO_BIN(?, TRUE)
         `;
-
-        const parameters = [userId];
+        
+        const parameters = [companyId];
         try {
             const result: Array<any> = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
             if (result.length == 1) {
@@ -42,18 +42,18 @@ class FacebookRepository implements IFacebookRepository {
         }
     }
 
-    async upsertWhatsappInfo(userId: string, token: string, debugToken: any, wabaInfo: WABAInfo): Promise<void> {
+    async upsertWhatsappInfo(companyId: string, token: string, debugToken: any, wabaInfo: WABAInfo): Promise<void> {
         //If a regsitry for the user already exists, update only the information regarding the token
         //TEMP: what if the user changes the facebook account ? Should I use fb_user_id as a part of the key ?
         const sql = `
-        INSERT INTO ${process.env.MYSQL_DATABASE as string}.user_whatsapp (id, token, token_expires_at, fb_user_id, waba_id, waba_name, phone_id, phone_number, phone_name, phone_verification_status)
+        INSERT INTO ${process.env.MYSQL_DATABASE as string}.whatsapp_info (companyId, token, tokenExpiresAt, fbUserId, wabaId, wabaName, phoneId, phoneNumber, phoneName, phoneVerificationStatus)
         VALUES (UUID_TO_BIN(?, TRUE), ?, FROM_UNIXTIME(?), ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
             token = VALUES(token),
-            token_expires_at = VALUES(token_expires_at);
+            tokenExpiresAt = VALUES(tokenExpiresAt);
         `;
 
-        const parameters = [userId, token, debugToken.data.expires_at, debugToken.data.user_id, wabaInfo.wabaId, wabaInfo.wabaName, wabaInfo.phoneId, wabaInfo.phoneNumber, wabaInfo.phoneName, wabaInfo.phoneVerificationStatus];
+        const parameters = [companyId, token, debugToken.data.expires_at, debugToken.data.user_id, wabaInfo.wabaId, wabaInfo.wabaName, wabaInfo.phoneId, wabaInfo.phoneNumber, wabaInfo.phoneName, wabaInfo.phoneVerificationStatus];
 
         try {
             await mysqlClient.insertQuery(sql, parameters);
@@ -62,17 +62,17 @@ class FacebookRepository implements IFacebookRepository {
         }
     }
 
-    async updateFidelityWhatsappMessageID(userId: string, phone: number, createdAt: string, wamid: string): Promise<void> {
+    async updateFidelityWhatsappMessageID(companyId: string, phone: number, createdAt: string, wamid: string): Promise<void> {
         const sql = `
         UPDATE ${process.env.MYSQL_DATABASE as string}.fidelity_history
-        SET whatsapp_message_id = ?
+        SET whatsappMessageId = ?
         WHERE
-            id = UUID_TO_BIN(?, TRUE)
+            companyId = UUID_TO_BIN(?, TRUE)
             AND phone = ?
-            AND created_at = ?
+            AND createdAt = ?
         `;
 
-        const parameters = [wamid, userId, phone, createdAt];
+        const parameters = [wamid, companyId, phone, createdAt];
 
         try {
             await mysqlClient.updateQuery(sql, parameters);
@@ -108,20 +108,20 @@ class FacebookRepository implements IFacebookRepository {
         }
     }
 
-    async getWhatsappTemplateInfo(userId: string, templateId: string): Promise<any> {
+    async getWhatsappTemplateInfo(companyId: string, templateId: string): Promise<any> {
         const sql = `
         SELECT
-            template_name,
-            language_code,
-            components_config
+            templateName,
+            languageCode,
+            componentsConfig
         FROM
             ${process.env.MYSQL_DATABASE as string}.whatsapp_templates
         WHERE
-            id = UUID_TO_BIN(?, TRUE)
-            AND template_id = ?
+            companyId = UUID_TO_BIN(?, TRUE)
+            AND templateId = ?
         `;
 
-        const parameters = [userId, templateId];
+        const parameters = [companyId, templateId];
         try {
             const result: Array<any> = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
             if (result.length == 1) {
@@ -137,19 +137,19 @@ class FacebookRepository implements IFacebookRepository {
         }
     }
 
-    async getRegisteredWhatsappTemplates(userId: string): Promise<any> {
+    async getRegisteredWhatsappTemplates(companyId: string): Promise<any> {
         const sql = `
         SELECT
-            template_id,
-            template_name,
-            language_code
+            templateId,
+            templateName,
+            languageCode
         FROM
             ${process.env.MYSQL_DATABASE as string}.whatsapp_templates
         WHERE
-            id = UUID_TO_BIN(?, TRUE)
+            companyId = UUID_TO_BIN(?, TRUE)
         `;
 
-        const parameters = [userId];
+        const parameters = [companyId];
 
         try {
             return await mysqlClient.selectQuery(sql, parameters) as Array<any>;
@@ -159,18 +159,18 @@ class FacebookRepository implements IFacebookRepository {
         }
     }
 
-    async upsertWhatsappTemplate(userId: string, templateId: string, templateName: string, languageCode: string, templateStatus: string, templateCategory: string, componentsConfig: string): Promise<any> {
+    async upsertWhatsappTemplate(companyId: string, templateId: string, templateName: string, languageCode: string, templateStatus: string, templateCategory: string, componentsConfig: string): Promise<any> {
         const sql = `
-        INSERT INTO ${process.env.MYSQL_DATABASE as string}.whatsapp_templates (id, template_id, template_name, language_code, template_status, template_category, components_config)
+        INSERT INTO ${process.env.MYSQL_DATABASE as string}.whatsapp_templates (companyId, templateId, templateName, languageCode, templateStatus, templateCategory, componentsConfig)
         VALUES (UUID_TO_BIN(?, TRUE), ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
-            template_name = VALUES(template_name),
-            template_status = VALUES(template_status),
-            template_category = VALUES(template_category),
-            components_config = VALUES(components_config)
+            templateName = VALUES(templateName),
+            templateStatus = VALUES(templateStatus),
+            templateCategory = VALUES(templateCategory),
+            componentsConfig = VALUES(componentsConfig)
         `;
 
-        const parameters = [userId, templateId, templateName, languageCode, templateStatus, templateCategory, componentsConfig]
+        const parameters = [companyId, templateId, templateName, languageCode, templateStatus, templateCategory, componentsConfig]
 
         try {
             await mysqlClient.insertQuery(sql, parameters);

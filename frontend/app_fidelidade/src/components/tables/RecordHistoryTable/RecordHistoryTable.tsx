@@ -19,6 +19,7 @@ export default function RecordHistoryTable({initialData, includeRedeemInfo}: Rec
                 <tr>
                     <th>Telefone</th>
                     <th>Criação</th>
+                    <th>Pontos</th>
                     {includeRedeemInfo ? <th>Resgate</th> : ''}
                     <th>Excluir</th>
                 </tr>
@@ -28,10 +29,11 @@ export default function RecordHistoryTable({initialData, includeRedeemInfo}: Rec
                     initialData.map((record, index) => (
                         <tr className={index % 2 == 0 ? 'evenrow' : 'oddrow'} key={index}>
                             <td>{Utils.formatPhone(record.phone)}</td>
-                            <td>{Utils.formatTimestamp(record.created_at)}</td>
-                            {includeRedeemInfo && record.redeemed_at != null ? <td>{Utils.formatTimestamp(record.redeemed_at)}</td> :  ''}
-                            {includeRedeemInfo && record.redeemed_at == null ? <td><span>-</span></td> :  ''}
-                            <td><CancelRecord phone={record.phone} timestamp={record.created_at} redeemed={record.redeemed_at != null ? true : false} canceled={record.canceled_at != null ? true : false} canceledAt={record.canceled_at != null ? record.canceled_at : undefined}/></td>
+                            <td>{Utils.formatTimestamp(record.createdAt)}</td>
+                            <td>{record.points}</td>
+                            {includeRedeemInfo && record.redeemedAt != null ? <td>{Utils.formatTimestamp(record.redeemedAt)}</td> :  ''}
+                            {includeRedeemInfo && record.redeemedAt == null ? <td><span>-</span></td> :  ''}
+                            <td><CancelRecord phone={record.phone} timestamp={record.createdAt} redeemed={record.redeemedAt != null ? true : false} canceled={record.canceledAt != null ? true : false} canceledAt={record.canceledAt != null ? record.canceledAt : undefined}/></td>
                         </tr>
                     ))
                 }

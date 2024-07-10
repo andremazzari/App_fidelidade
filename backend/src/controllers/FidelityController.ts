@@ -13,17 +13,17 @@ class FidelityController implements IFidelityController {
 
     async registerFidelity(req: Request, res: Response): Promise<Response> {
         //TEMP: include also the id of the user and the id of the store
-        const {phone, userId} = req.body;
+        const {phone, points, userId, companyId} = req.body;
 
         try {
-            await FidelitySchemas.registerFidelity().validate({phone, userId});
+            await FidelitySchemas.registerFidelity().validate({companyId, userId, phone, points});
             //await RegisterFidelitySchema.validate({phone, userId});
         } catch (error) {
             return res.status(400).json({error});
         }
 
         try {
-            const result = await this.fidelityService.registerFidelity(parseInt(phone), userId);
+            const result = await this.fidelityService.registerFidelity(companyId, userId, parseInt(phone), parseInt(points));
 
             return res.status(result.status).json(result.json)
         } catch (error) {
@@ -34,7 +34,7 @@ class FidelityController implements IFidelityController {
 
     async getRecords(req: Request, res: Response): Promise<Response> {
         //TEMP: in the future, use the id of the store.
-        const userId = req.body.userId;
+        const companyId = req.body.companyId;
         const pageNumber = req.query.pageNumber as string;
         const pageSize = req.query.pageSize as string;
         let phone = req.query.phone as string | undefined;
@@ -44,7 +44,7 @@ class FidelityController implements IFidelityController {
         const includeCanceled = Utils.StringToBoolean(req.query.includeCanceled as string | undefined);
 
         try {
-            await FidelitySchemas.getRecords().validate({userId, pageNumber, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
+            await FidelitySchemas.getRecords().validate({companyId, pageNumber, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
             //await GetRecordsSchema.validate({userId, pageNumber, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
         } catch (error) {
             return res.status(400).json({error});
@@ -52,7 +52,7 @@ class FidelityController implements IFidelityController {
 
         try {
             const transformedPhone = phone !== undefined ? parseInt(phone) : undefined;
-            const result = await this.fidelityService.getRecords(userId, parseInt(pageNumber), parseInt(pageSize), transformedPhone, initialDate, endDate, excludeRedeemed, includeCanceled);
+            const result = await this.fidelityService.getRecords(companyId, parseInt(pageNumber), parseInt(pageSize), transformedPhone, initialDate, endDate, excludeRedeemed, includeCanceled);
 
             return res.status(200).json(result)
         } catch (error) {
@@ -63,19 +63,20 @@ class FidelityController implements IFidelityController {
 
     async deleteFidelityRecord(req: Request, res: Response): Promise<Response> {
         //TEMP: in the future, use the id of the store.
+        const companyId = req.body.companyId;
         const userId = req.body.userId;
         const phone = req.body.phone;
         const timestamp = req.body.timestamp;
         
         try {
-            await FidelitySchemas.deleteFidelity().validate({userId, phone, timestamp});
+            await FidelitySchemas.deleteFidelity().validate({companyId, userId, phone, timestamp});
             //await DeleteFidelitySchema.validate({userId, phone, timestamp});
         } catch (error) {
             return res.status(400).json({error});
         }
 
         try {
-            const result = await this.fidelityService.deleteFidelityRecord(userId, parseInt(phone), timestamp);
+            const result = await this.fidelityService.deleteFidelityRecord(companyId, userId, parseInt(phone), timestamp);
 
             return res.status(200).json({canceled_at: result})
         } catch (error) {
@@ -87,7 +88,7 @@ class FidelityController implements IFidelityController {
 
     async getRecordsCountPages(req: Request, res: Response): Promise<Response> {
         //TEMP: in the future, use the id of the store.
-        const userId = req.body.userId;
+        const companyId = req.body.companyId;
         const pageSize = req.query.pageSize as string;
         let phone = req.query.phone as string;
         const initialDate = req.query.initialDate as string;
@@ -96,7 +97,7 @@ class FidelityController implements IFidelityController {
         const includeCanceled = Utils.StringToBoolean(req.query.includeCanceled as string | undefined);
 
         try {
-            await FidelitySchemas.getRecordsCountPages().validate({userId, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
+            await FidelitySchemas.getRecordsCountPages().validate({companyId, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
             //await GetRecordsCountPagesSchema.validate({userId, pageSize, phone, initialDate, endDate, excludeRedeemed, includeCanceled});
         } catch (error) {
             return res.status(400).json({error});
@@ -104,7 +105,7 @@ class FidelityController implements IFidelityController {
 
         try {
             const transformedPhone = phone !== undefined ? parseInt(phone) : undefined;
-            const pagesNumber = await this.fidelityService.getRecordsCountPages(userId, parseInt(pageSize), transformedPhone, initialDate, endDate, excludeRedeemed, includeCanceled);
+            const pagesNumber = await this.fidelityService.getRecordsCountPages(companyId, parseInt(pageSize), transformedPhone, initialDate, endDate, excludeRedeemed, includeCanceled);
 
             return res.status(200).json({pages: pagesNumber});
         } catch (error) {
@@ -115,18 +116,18 @@ class FidelityController implements IFidelityController {
 
     async getFidelityInfo(req: Request, res: Response): Promise<Response> {
         //TEMP: in the future, use the id of the store.
-        const userId = req.body.userId;
+        const companyId = req.body.companyId;
         const phone = req.query.phone as string;
 
         try {
-            await FidelitySchemas.getFidelityInfo().validate({userId, phone});
+            await FidelitySchemas.getFidelityInfo().validate({companyId, phone});
             //await GetFidelityInfoSchema.validate({userId, phone});
         } catch (error) {
             return res.status(400).json({error});
         }
 
         try {
-            const result = await this.fidelityService.getFidelityInfo(userId, parseInt(phone));
+            const result = await this.fidelityService.getFidelityInfo(companyId, parseInt(phone));
 
             return res.status(200).json(result);
         } catch (error) {
@@ -137,17 +138,17 @@ class FidelityController implements IFidelityController {
 
     async getFidelityConfig(req: Request, res: Response): Promise<Response> {
         //TEMP: in the future, use the id of the store.
-        const userId = req.body.userId;
+        const companyId = req.body.companyId;
 
         try {
-            await FidelitySchemas.getFidelityConfig().validate({userId});
+            await FidelitySchemas.getFidelityConfig().validate({companyId});
             //await GetFidelityConfigSchema.validate({userId});
         } catch (error) {
             return res.status(400).json({error});
         }
 
         try {
-            const result = await this.fidelityService.getFidelityConfig(userId);
+            const result = await this.fidelityService.getFidelityConfig(companyId);
 
             return res.status(200).json(result);
         } catch (error) {
@@ -159,20 +160,20 @@ class FidelityController implements IFidelityController {
 
     async updateFidelityConfig(req: Request, res: Response): Promise<Response> {
         //TEMP: in the future, use the id of the store.
-        const userId = req.body.userId;
+        const companyId = req.body.companyId;
         //const target = req.body.target;
         //const whatsappMessageEnabled = Utils.StringToBoolean(req.body.whatsappMessageEnabled as string | undefined);
         const config = Utils.parseJSONString(req.body.config) as FidelityConfig;
         
         try {
-            await FidelitySchemas.updateFidelityConfig().validate({userId, config});
+            await FidelitySchemas.updateFidelityConfig().validate({companyId, config});
             //await UpdateFidelityConfigSchema.validate({userId, config});
         } catch (error) {
             return res.status(400).json({error});
         }
         
         try {
-            await this.fidelityService.updateFidelityConfig(userId, config);
+            await this.fidelityService.updateFidelityConfig(companyId, config);
 
             return res.status(204).json({});
         } catch (error) {
@@ -183,18 +184,19 @@ class FidelityController implements IFidelityController {
     }
 
     async redeemFidelity(req: Request, res: Response): Promise<Response> {
+        const companyId = req.body.companyId;
         const userId = req.body.userId;
         const phone = req.body.phone as string;
 
         try {
-            await FidelitySchemas.redeemFidelity().validate({userId, phone});
+            await FidelitySchemas.redeemFidelity().validate({companyId, userId, phone});
             //await RedeemFidelitySchema.validate({userId, phone});
         } catch (error) {
             return res.status(400).json({error});
         }
 
         try {
-            const newFildeityInfo = await this.fidelityService.redeemFidelity(userId, parseInt(phone));
+            const newFildeityInfo = await this.fidelityService.redeemFidelity(companyId, userId, parseInt(phone));
 
             return res.status(200).json(newFildeityInfo);
         } catch (error) {
@@ -207,7 +209,7 @@ class FidelityController implements IFidelityController {
 
     async getRedeemRecords(req: Request, res: Response): Promise<Response> {
         //TEMP: in the future, use the id of the store.
-        const userId = req.body.userId;
+        const companyId = req.body.companyId;
         const pageNumber = req.query.pageNumber as string;
         const pageSize = req.query.pageSize as string;
         let phone = req.query.phone as string;
@@ -215,7 +217,7 @@ class FidelityController implements IFidelityController {
         const endDate = req.query.endDate as string;
 
         try {
-            await FidelitySchemas.getRedeemRecords().validate({userId, pageNumber, pageSize, phone, initialDate, endDate});
+            await FidelitySchemas.getRedeemRecords().validate({companyId, pageNumber, pageSize, phone, initialDate, endDate});
             //await GetRedeemRecordsSchema.validate({userId, pageNumber, pageSize, phone, initialDate, endDate});
         } catch (error) {
             return res.status(400).json({error});
@@ -223,7 +225,7 @@ class FidelityController implements IFidelityController {
 
         try {
             const transformedPhone = phone !== undefined ? parseInt(phone) : undefined;
-            const result = await this.fidelityService.getRedeemRecords(userId, parseInt(pageNumber), parseInt(pageSize), transformedPhone, initialDate, endDate);
+            const result = await this.fidelityService.getRedeemRecords(companyId, parseInt(pageNumber), parseInt(pageSize), transformedPhone, initialDate, endDate);
 
             return res.status(200).json(result)
         } catch (error) {

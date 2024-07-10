@@ -21,8 +21,10 @@ function FidelityFormContent({formState}: FidelityFormContentProps) {
     const [points, setPoints] = useState('1');
 
     useEffect(() => {
-
-    }, [pending])
+        if (formState.success == true || formState.success == null) {
+            setPoints('1');
+        }
+    }, [formState])
 
     function handlePointsChange(e: ChangeEvent<HTMLInputElement>) {
         const value = e.target.value;
@@ -65,7 +67,7 @@ function FidelityFormContent({formState}: FidelityFormContentProps) {
 }
 
 export default function FidelityForm() {
-    const [formState, formAction] = useFormState(RegisterFidelity, {success: null, message: ''});
+    const [formState, formAction] = useFormState(RegisterFidelity, {success: null, message: '', changeIndicator: false});
 
     return (
         <FormContainer action={formAction} method="POST">

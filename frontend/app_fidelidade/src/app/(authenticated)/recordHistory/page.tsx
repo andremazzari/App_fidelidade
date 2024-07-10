@@ -16,7 +16,7 @@ export default async function Page() {
     
     return (
         <PageContainer>
-            <RecordHistory initialData={response.data.records} initialPageNumber={initialPageNumber} initialTotalPages={response.data.pages}/>
+            <RecordHistory initialData={response.data.records} initialPageNumber={initialPageNumber} initialTotalPages={response.data.pages} includeRedeemInfo={true}/>
         </PageContainer>
     )
 }

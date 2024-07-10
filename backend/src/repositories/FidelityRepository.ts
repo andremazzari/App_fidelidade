@@ -5,13 +5,13 @@ import { ResultSetHeader } from "mysql2";
 import Utils from "../utils/Utils";
 
 class FidelityRepository implements IFidelityRepository {
-    async registerFidelity(phone: number, userId: string): Promise<string> {
+    async registerFidelity(companyId: string, userId: string, phone: number, points: number): Promise<string> {
         const sql = `
-        INSERT INTO ${process.env.MYSQL_DATABASE as string}.fidelity_history (id, phone, points, target, created_at)
-        VALUES (UUID_TO_BIN(?, TRUE), ?, 1, (SELECT target FROM ${process.env.MYSQL_DATABASE as string}.fidelity_config WHERE id = UUID_TO_BIN(?, TRUE)), ?)
+        INSERT INTO ${process.env.MYSQL_DATABASE as string}.fidelity_history (companyId, phone, points, target, createdAt, createdBy)
+        VALUES (UUID_TO_BIN(?, TRUE), ?, ?, (SELECT target FROM ${process.env.MYSQL_DATABASE as string}.fidelity_config WHERE companyId = UUID_TO_BIN(?, TRUE)), ?, UUID_TO_BIN(?, TRUE))
         `;
-        const timestamp = Utils.currentTimestampToMySQL(1);
-        const parameters = [userId, phone, userId, timestamp];
+        const timestamp = Utils.timestampToMySQL(1);
+        const parameters = [companyId, phone, points, companyId, timestamp, userId];
 
         try {
             await mysqlClient.insertQuery(sql, parameters);
@@ -23,20 +23,21 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
 
-    async getRecords(userId: string, offset: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<any> {
+    async getRecords(companyId: string, offset: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<any> {
         //TEMP: validate offset and pageSize againts sql injection
         let sql = `
         SELECT
             phone,
-            created_at,
-            redeemed_at,
-            canceled_at
+            createdAt,
+            points,
+            redeemedAt,
+            canceledAt
         FROM
             ${process.env.MYSQL_DATABASE as string}.fidelity_history
         WHERE
-            id = UUID_TO_BIN(?, TRUE)
+            companyId = UUID_TO_BIN(?, TRUE)
             `;
-        const parameters: Array<string | number> = [userId];
+        const parameters: Array<string | number> = [companyId];
 
         if (phone !== undefined) {
             sql += ' AND phone = ?'
@@ -44,23 +45,24 @@ class FidelityRepository implements IFidelityRepository {
         }
 
         if (initialDate !== undefined && endDate !== undefined) {
-            sql += ' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)'
+            sql += ' AND createdAt >= ? AND createdAt < DATE_ADD(?, INTERVAL 1 DAY)'
 
             parameters.push(initialDate);
             parameters.push(endDate);
         }
 
         if (excludeRedeemed) {
-            sql += ' AND redeemed_at IS NULL'
+            sql += ' AND redeemedAt IS NULL'
         }
 
         if (includeCanceled == undefined || includeCanceled == false) {
-            sql += ' AND canceled_at IS NULL'
+            sql += ' AND canceledAt IS NULL'
         }
 
         sql += `
         ORDER BY
-            created_at DESC
+            createdAt DESC,
+            fidelityId DESC
         LIMIT ${pageSize}
         OFFSET ${offset}
         `;
@@ -74,21 +76,21 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
 
-    async deleteFidelityRecord(userId: string, phone: number, timestamp: string): Promise<string> {
+    async deleteFidelityRecord(companyId: string, userId: string, phone: number, timestamp: string): Promise<string> {
         //Only records that have not been redeemed can be deleted.
         const sql = `
-        CALL CancelPoints(?,?,?)
+        CALL CancelPoints(?,?,?,?)
         `;
 
-        const parameters = [userId, phone, timestamp];
+        const parameters = [companyId, userId, phone, timestamp];
         try {
             //TEMP: it is necessary to use the selectQuery for this stored procedure because the last execution of this procedure is an selecte statment that return some values.
             const result = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
             const row = result[0][0]
 
-            if (row.affected_rows == 1) {
-                return row.canceled_at;
-            } else if (row.affected_rows == 0) {
+            if (row.affectedRows == 1) {
+                return row.canceledAt;
+            } else if (row.affectedRows == 0) {
                 //TEMP: send this error in the route. It is possible that the record exists but has already been redeemed. How to treat this ?
                 throw new Error('Not found');
             } else {
@@ -100,16 +102,16 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
 
-    async getRecordsCount(userId: string, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<number> {
+    async getRecordsCount(companyId: string, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined, excludeRedeemed?: boolean | undefined, includeCanceled?: boolean | undefined): Promise<number> {
         let sql = `
         SELECT
             count(*) as count
         FROM
             ${process.env.MYSQL_DATABASE as string}.fidelity_history
         WHERE
-            id = UUID_TO_BIN(?, TRUE)
+            companyId = UUID_TO_BIN(?, TRUE)
             `;
-        const parameters: Array<string | number> = [userId];
+        const parameters: Array<string | number> = [companyId];
 
         if (phone !== undefined) {
             sql += ' AND phone = ?'
@@ -117,17 +119,17 @@ class FidelityRepository implements IFidelityRepository {
         }
 
         if (initialDate !== undefined && endDate !== undefined) {
-            sql += ' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)'
+            sql += ' AND createdAt >= ? AND createdAt < DATE_ADD(?, INTERVAL 1 DAY)'
             parameters.push(initialDate);
             parameters.push(endDate);
         }
 
         if (excludeRedeemed) {
-            sql += ' AND redeemed_at IS NULL'
+            sql += ' AND redeemedAt IS NULL'
         }
 
         if (includeCanceled == undefined || includeCanceled == false) {
-            sql += ' AND canceled_at IS NULL'
+            sql += ' AND canceledAt IS NULL'
         }
         
         try {
@@ -143,22 +145,22 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
 
-    async countPoints(userId: string, phone: number, initialDate?: string, endDate?: string): Promise<number> {
+    async countPoints(companyId: string, phone: number, initialDate?: string, endDate?: string): Promise<number> {
         let sql = `
         SELECT
             sum(points) as points
         FROM
             ${process.env.MYSQL_DATABASE as string}.fidelity_history
         WHERE
-            id = UUID_TO_BIN(?, TRUE)
+            companyId = UUID_TO_BIN(?, TRUE)
             AND phone = ?
-            AND redeemed_at IS NULL
-            AND canceled_at IS NULL`;
+            AND redeemedAt IS NULL
+            AND canceledAt IS NULL`;
 
-        const parameters: Array<string | number> = [userId, phone];
+        const parameters: Array<string | number> = [companyId, phone];
 
         if (initialDate !== undefined && endDate !== undefined) {
-            sql += ' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)'
+            sql += ' AND createdAt >= ? AND createdAt < DATE_ADD(?, INTERVAL 1 DAY)'
             parameters.push(initialDate);
             parameters.push(endDate);
         }
@@ -168,7 +170,6 @@ class FidelityRepository implements IFidelityRepository {
             
             if (result.length == 1) {
                 return result[0].points == null ? 0 : parseInt(result[0].points);
-                
             }
 
             return 0
@@ -177,23 +178,23 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
 
-    async getOlderTarget(userId: string, phone: number): Promise<number | null> {
+    async getOlderTarget(companyId: string, phone: number): Promise<number | null> {
         const sql = `
         SELECT
             target
         FROM
             ${process.env.MYSQL_DATABASE as string}.fidelity_history
         WHERE
-            id = UUID_TO_BIN(?, TRUE)
+            companyId = UUID_TO_BIN(?, TRUE)
             AND phone = ?
-            AND redeemed_at IS NULL
-            AND canceled_at IS NULL
+            AND redeemedAt IS NULL
+            AND canceledAt IS NULL
         ORDER BY
-            created_at ASC
+            createdAt ASC
         LIMIT 1
         `;
 
-        const parameters = [userId, phone];
+        const parameters = [companyId, phone];
 
         try {
             const result = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
@@ -208,15 +209,15 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
 
-    async createFidelityConfig(userId: string): Promise<void> {
+    async createFidelityConfig(companyId: string): Promise<void> {
         const defaultTarget = 10; //TEMP: should this default be in the table definition ?
         const defaultWhatsappMessageEnabled = false;
         const sql = `
-            INSERT INTO ${process.env.MYSQL_DATABASE as string}.fidelity_config (id, target, whatsapp_message_enabled)
+            INSERT INTO ${process.env.MYSQL_DATABASE as string}.fidelity_config (companyId, target, whatsappMessageEnabled)
             VALUES (UUID_TO_BIN(?, TRUE), ?, ?)
         `;
 
-        const parameters = [userId, defaultTarget, defaultWhatsappMessageEnabled];
+        const parameters = [companyId, defaultTarget, defaultWhatsappMessageEnabled];
 
         try {
             await mysqlClient.insertQuery(sql, parameters)
@@ -225,7 +226,7 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
 
-    async getFidelityConfig(userId: string, fields?: string): Promise<any> {
+    async getFidelityConfig(companyId: string, fields?: string): Promise<any> {
         //TEMP: if fields is included in the route, validate againts invalid input and sql injection
         let columns = '*'
         if (fields) {
@@ -238,10 +239,10 @@ class FidelityRepository implements IFidelityRepository {
         FROM
             ${process.env.MYSQL_DATABASE as string}.fidelity_config
         WHERE
-            id = UUID_TO_BIN(?, TRUE)
+            companyId = UUID_TO_BIN(?, TRUE)
         `;
 
-        const parameters = [userId]
+        const parameters = [companyId]
 
         try {
             const result = await mysqlClient.selectQuery(sql, parameters) as Array<any>;
@@ -259,7 +260,7 @@ class FidelityRepository implements IFidelityRepository {
         }        
     }
 
-    async updateFidelityConfig(userId: string, config: FidelityConfig): Promise<boolean> {
+    async updateFidelityConfig(companyId: string, config: FidelityConfig): Promise<boolean> {
         //TEMP: use the id of the store
         let updateStatement = '';
         const parameters: Array<any> = [];
@@ -281,9 +282,9 @@ class FidelityRepository implements IFidelityRepository {
         const sql = `
         UPDATE ${process.env.MYSQL_DATABASE as string}.fidelity_config
         SET ${updateStatement}
-        WHERE id = UUID_TO_BIN(?, TRUE) 
+        WHERE companyId = UUID_TO_BIN(?, TRUE) 
         `;
-        parameters.push(userId)
+        parameters.push(companyId)
         try {
             const result = await mysqlClient.updateQuery(sql, parameters) as ResultSetHeader;
             if (result.affectedRows == 1) {
@@ -298,33 +299,32 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
     
-    async redeemFidelity(userId: string, phone: number, target: number): Promise<void> {
+    async redeemFidelity(companyId: string, userId: string, phone: number, target: number): Promise<void> {
         //TEMP: For now, this function only works if each record values 1 point.
-        const sql = `CALL RedeemPoints(?,?,?)`;
+        const sql = `CALL RedeemPoints(?,?,?,?)`;
 
-        const parameters = [userId, phone, target];
+        const parameters = [companyId, userId, phone, target];
 
         try {
-            const result = await mysqlClient.callProcedure(sql, parameters) as ResultSetHeader;
-            
+            await mysqlClient.callProcedure(sql, parameters) as ResultSetHeader;
         } catch (error) {
 
             throw error;
         }
     }
 
-    async getRedeemRecords(userId: string, offset: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any> {
+    async getRedeemRecords(companyId: string, offset: number, pageSize: number, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<any> {
         //TEMP: validate offset and pageSize againts sql injection
         let sql = `
         SELECT
             phone,
             points,
-            created_at
+            createdAt
         FROM
             ${process.env.MYSQL_DATABASE as string}.redeem_history
         WHERE
-            id = UUID_TO_BIN(?, TRUE)`;
-        const parameters: Array<string | number> = [userId];
+            companyId = UUID_TO_BIN(?, TRUE)`;
+        const parameters: Array<string | number> = [companyId];
 
         if (phone !== undefined) {
             sql += ' AND phone = ?'
@@ -332,14 +332,14 @@ class FidelityRepository implements IFidelityRepository {
         }
 
         if (initialDate !== undefined && endDate !== undefined) {
-            sql += ' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)'
+            sql += ' AND createdAt >= ? AND createdAt < DATE_ADD(?, INTERVAL 1 DAY)'
             parameters.push(initialDate);
             parameters.push(endDate);
         }
 
         sql += `
         ORDER BY
-            created_at DESC
+            createdAt DESC
         LIMIT ${pageSize}
         OFFSET ${offset}
         `;
@@ -353,15 +353,15 @@ class FidelityRepository implements IFidelityRepository {
         }
     }
 
-    async getRedeemRecordsCount(userId: string, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number> {
+    async getRedeemRecordsCount(companyId: string, phone: number | undefined, initialDate: string | undefined, endDate: string | undefined): Promise<number> {
         let sql = `
         SELECT
             count(*) as count
         FROM
             ${process.env.MYSQL_DATABASE as string}.redeem_history
         WHERE
-            id = UUID_TO_BIN(?, TRUE)`;
-        const parameters: Array<string | number> = [userId];
+            companyId = UUID_TO_BIN(?, TRUE)`;
+        const parameters: Array<string | number> = [companyId];
 
         if (phone !== undefined) {
             sql += ' AND phone = ?'
@@ -369,7 +369,7 @@ class FidelityRepository implements IFidelityRepository {
         }
 
         if (initialDate !== undefined && endDate !== undefined) {
-            sql += ' AND created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)'
+            sql += ' AND createdAt >= ? AND createdAt < DATE_ADD(?, INTERVAL 1 DAY)'
             parameters.push(initialDate);
             parameters.push(endDate);
         }

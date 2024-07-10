@@ -30,6 +30,12 @@ function SignInformContent({formState, redirectPath}: SignInFormContentProps) {
 
             {/*redirect parameter*/}
             <input type="hidden" name='redirectPath' value={redirectPath}/>
+
+            {/*forgot password link*/}
+            <FormItem marginbottom="30px">
+                {/*TEMP: Move this style to some styled component class or css file*/}
+                <a  href='/forgotPassword' style={{color: 'blue', textDecoration: 'underline'}}>Esqueci a senha</a>
+            </FormItem>
             
             <FormButtonContainer>
                 <FormButton type="submit" disabled={pending}>

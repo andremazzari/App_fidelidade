@@ -9,7 +9,7 @@ class WhatsappTemplate {
     public componentConfig: Array<Record<string, any>> | null
     public languageCode: string | null
 
-    constructor(private userId: string, private templateId: string, private points: number, private target: number) {
+    constructor(private companyId: string, private templateId: string, private points: number, private target: number) {
         this.facebookRepository = FacebookFactory.repository();
         this.componentConfig = null;
         this.templateName = null;
@@ -18,18 +18,18 @@ class WhatsappTemplate {
 
     async prepareTemplateInfo() {
         //This function should be run before the class is used
-        const templateInfo = await this.facebookRepository.getWhatsappTemplateInfo(this.userId, this.templateId);
+        const templateInfo = await this.facebookRepository.getWhatsappTemplateInfo(this.companyId, this.templateId);
 
         //set template name
-        this.templateName = templateInfo.template_name;
+        this.templateName = templateInfo.templateName;
         
         //set component config
-        if (templateInfo.components_config && templateInfo.components_config.length > 0) {
-            this.componentConfig = templateInfo.components_config.map((item: Record<string, any>) => this.prepareComponentConfig(item))
+        if (templateInfo.componentsConfig && templateInfo.componentsConfig.length > 0) {
+            this.componentConfig = templateInfo.componentsConfig.map((item: Record<string, any>) => this.prepareComponentConfig(item))
         }
         
         //set language code
-        this.languageCode = templateInfo.language_code;
+        this.languageCode = templateInfo.languageCode;
     }
 
     private prepareComponentConfig(item: Record<string, any>) {
